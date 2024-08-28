@@ -1,6 +1,6 @@
 {
   "name": "@vrerv/node-package-template",
-  "version": "2.2.15",
+  "version": "0.0.1",
   "description": "A node package template",
   "engines": {
     "node": ">=12"
@@ -35,7 +35,11 @@
     "build/package.json",
     "build/src/**"
   ],
-  "dependencies": {},
+  "dependencies": {
+    "@notionhq/client": "^2.2.3",
+    "@tryfabric/martian": "^1.2.4",
+    "gray-matter": "^4.0.3"
+  },
   "devDependencies": {
     "@types/jest": "^28.1.4",
     "@typescript-eslint/eslint-plugin": "^5.39.0",

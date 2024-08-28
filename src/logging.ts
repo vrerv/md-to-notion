@@ -8,12 +8,19 @@ export enum LogLevel {
 }
 
 export interface Logger {
-  (level: LogLevel, message: string, extraInfo: Record<string, unknown>): void
+  (level: LogLevel, message: string, extraInfo?: Record<string, unknown>): void
 }
 
-export function makeConsoleLogger(name: string): Logger {
+export function makeConsoleLogger(name = "default", options = {
+  inspectOptions: {
+    depth:null,
+  },
+  stdout:process.stdout,
+  stderr:process.stderr,
+}): Logger {
   return (level, message, extraInfo) => {
-    console[level](`${name} ${level}:`, message, extraInfo)
+    const logger = new console.Console(options)
+    logger[level](`${name} ${level}:`, message, extraInfo)
   }
 }
 
