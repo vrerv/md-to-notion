@@ -54,8 +54,8 @@ export function readMarkdownFiles(dirPath: string): Folder | null {
         }
       } else if (stats.isFile() && entry.name.endsWith('.md')) {
         const content = matter(fs.readFileSync(entryPath, 'utf-8')).content
-        //const noLinkContent = removeMarkdownLinks(content)
-        const blockContent = markdownToBlocks(content)
+        const noLinkContent = removeMarkdownLinks(content)
+        const blockContent = markdownToBlocks(noLinkContent)
 
         const fileNameWithoutExtension = path.basename(entry.name, '.md')
         folder.files.push({ fileName: fileNameWithoutExtension, blockContent })
@@ -75,9 +75,8 @@ export function readMarkdownFiles(dirPath: string): Folder | null {
  * @param content - The content to process.
  * @returns The content with links removed.
  */
-function removeMarkdownLinks(content: string): string {
-  const linkPattern = /\[([^\]]+)]\(#([^)]+)\)/g
-  return content.replace(linkPattern, '$1')
+export function removeMarkdownLinks(content: string): string {
+  return content.replace(/\[([^\]]+)\]\((?!https?:\/\/)[^\)]+\)/g, '$1');
 }
 
 /**
@@ -90,11 +89,11 @@ export function printFolderHierarchy(folder: Folder | null, indent = ''): void {
   if (!folder) return; // Exit if the folder is null
 
   // Print the current folder's name
-  console.log(`${indent}${folder.name}/`)
+  logger(LogLevel.INFO, `${indent}${folder.name}/`)
 
   // Print the files in the current folder
   for (const file of folder.files) {
-    console.log(`${indent}  - ${file.fileName}.md`)
+    logger(LogLevel.INFO, `${indent}  - ${file.fileName}.md`)
   }
 
   // Recursively print each subfolder

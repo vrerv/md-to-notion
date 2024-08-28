@@ -9,3 +9,8 @@
 link to some executable file not allowed from notion api
 
 * [index.ts](../index.ts)
+
+## External Link
+
+* [Google](https://www.google.com)
+* [Notion](https://www.notion.so)

@@ -20,7 +20,7 @@ export function makeConsoleLogger(name = "default", options = {
 }): Logger {
   return (level, message, extraInfo) => {
     const logger = new console.Console(options)
-    logger[level](`${name} ${level}:`, message, extraInfo)
+    logger[level](`${name} ${level}:`, message, extraInfo ? extraInfo : "")
   }
 }
 

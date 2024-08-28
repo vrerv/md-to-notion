@@ -5,12 +5,15 @@ import {
   makeConsoleLogger,
   LogLevel,
 } from "@vrerv/node-package-template"
+
+
+const logger = makeConsoleLogger()
+
 async function main() {
-  const dir = readMarkdownFiles("./docs1")
+  const dir = readMarkdownFiles("./docs")
   printFolderHierarchy(dir)
-  const logger = makeConsoleLogger()
-  logger(LogLevel.INFO, dir)
-  // await syncToNotion(process.env.NOTION_API_TOKEN, "9d82d1c88ffa422e84472fb3b1d7c8b8", dir)
+  logger(LogLevel.DEBUG, "", dir)
+  await syncToNotion(process.env.NOTION_API_TOKEN, "9d82d1c88ffa422e84472fb3b1d7c8b8", dir)
 }
 
 main()
