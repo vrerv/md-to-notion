@@ -1,0 +1,11 @@
+node_modules
+
+package-lock.json
+/build
+
+/examples/**/node_modules
+/examples/**/package-lock.json
+/examples/**/.env
+
+.vscode
+.idea

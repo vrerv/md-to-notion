@@ -1,0 +1,19 @@
+{
+  "name": "example-project",
+  "version": "1.0.0",
+  "description": "Example of using sdk.",
+  "main": "index.js",
+  "type": "module",
+  "engines": {
+    "node": "12.x"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "ts-run": "node --loader ts-node/esm index.ts"
+  },
+  "dependencies": {
+    "@vrerv/node-package-template": "file:../../"
+  },
+  "author": "VReRV",
+  "license": "MIT"
+}
