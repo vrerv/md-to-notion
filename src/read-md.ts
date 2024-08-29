@@ -70,13 +70,13 @@ export function readMarkdownFiles(dirPath: string): Folder | null {
 }
 
 /**
- * Removes Markdown links from the content.
+ * Removes internal Markdown links from the content for Notion.
  *
  * @param content - The content to process.
  * @returns The content with links removed.
  */
 export function removeMarkdownLinks(content: string): string {
-  return content.replace(/\[([^\]]+)\]\((?!https?:\/\/)[^\)]+\)/g, '$1');
+  return content.replace(/\[([^\]]+)]\((?!(#|https?:\/\/))[^)]+\)/g, '$1');
 }
 
 /**

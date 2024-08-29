@@ -2,13 +2,13 @@ import { removeMarkdownLinks } from '../src/read-md'
 
 describe('removeMarkdownLinks', () => {
   it('removes markdown links and keeps the link text', () => {
-    const content = 'This is a [link](#section) in markdown.'
+    const content = 'This is a [link](./section) in markdown.'
     const result = removeMarkdownLinks(content)
     expect(result).toBe('This is a link in markdown.')
   })
 
   it('removes multiple markdown links and keeps the link texts', () => {
-    const content = 'Here is a [link1](#section1) and another [link2](#section2).'
+    const content = 'Here is a [link1](./section1) and another [link2](./section2).'
     const result = removeMarkdownLinks(content)
     expect(result).toBe('Here is a link1 and another link2.')
   })
@@ -32,9 +32,15 @@ describe('removeMarkdownLinks', () => {
   })
 
   it('handles content with only markdown links', () => {
-    const content = '[link1](#section1) [link2](#section2)'
+    const content = '[link1](./section1) [link2](./section2)'
     const result = removeMarkdownLinks(content)
     expect(result).toBe('link1 link2')
+  })
+
+  it('keep anchor links', () => {
+    const content = 'follow [link1](#section1)'
+    const result = removeMarkdownLinks(content)
+    expect(result).toBe('follow [link1](#section1)')
   })
 
   it('keeps external links starting with http or https', () => {
