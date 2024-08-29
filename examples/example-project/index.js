@@ -4,12 +4,12 @@ import {
   syncToNotion,
   makeConsoleLogger,
   LogLevel,
-} from "@vrerv/node-package-template"
+} from "@vrerv/md-to-notion"
 
 const logger = makeConsoleLogger()
 
 async function main() {
-  const dir = readMarkdownFiles(".")
+  const dir = readMarkdownFiles("./docs")
   printFolderHierarchy(dir)
   //logger(LogLevel.DEBUG, "", dir)
   await syncToNotion(

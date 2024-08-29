@@ -1,7 +1,7 @@
 {
   "name": "example-project",
   "version": "1.0.0",
-  "description": "Example of using sdk.",
+  "description": "Example of using md-to-notion.",
   "main": "index.js",
   "type": "module",
   "engines": {
@@ -12,7 +12,7 @@
     "ts-run": "node --loader ts-node/esm index.ts"
   },
   "dependencies": {
-    "@vrerv/node-package-template": "file:../../"
+    "@vrerv/md-to-notion": "file:../../"
   },
   "author": "VReRV",
   "license": "MIT"

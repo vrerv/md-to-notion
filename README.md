@@ -1,17 +1,19 @@
 <div align="center">
-	<h1>Node package template</h1>
+	<h1>MD to Notion</h1>
 	<p>
-		<b>A node package template project</b>
+		<b>An upload of markdown files to a hierarchy of Notion pages.</b>
 	</p>
 	<br>
 </div>
 
-![Build status](https://github.com/vrerv/node-package-template/actions/workflows/ci.yml/badge.svg)
-[![npm version](https://badge.fury.io/js/%40vrerv%2Fnode-package-template.svg)](https://www.npmjs.com/package/@vrerv/node-package-template)
+![Build status](https://github.com/vrerv/md-to-notion/actions/workflows/ci.yml/badge.svg)
+[![npm version](https://badge.fury.io/js/%40vrerv%2Fmd-to-notion.svg)](https://www.npmjs.com/package/@vrerv/md-to-notion)
 
 ## Usage
 
-TODO: build software and write usage instructions
+TODO: Add usage
+
+See [Example Project](./examples/example-project) for live example
 
 ## Requirements
 
@@ -24,4 +26,6 @@ Earlier versions may still work, but we encourage people building new applicatio
 
 ## References
 
-- This codebase has been stripped down from the original [notion-sdk-js](https://github.com/makenotion/notion-sdk-js)
+- [notion-sdk-js](https://github.com/makenotion/notion-sdk-js)
+- [martian](https://github.com/typ)
+- [markdown2notion](https://github.com/Rujuu-prog/markdown2notion) - Initially I tried to use this but need more feature for my use case

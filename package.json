@@ -1,17 +1,17 @@
 {
-  "name": "@vrerv/node-package-template",
+  "name": "@vrerv/md-to-notion",
   "version": "0.0.1",
-  "description": "A node package template",
+  "description": "An upload of markdown files to a hierarchy of Notion pages.",
   "engines": {
     "node": ">=12"
   },
   "homepage": "https://vrerv.com",
   "bugs": {
-    "url": "https://github.com/vrerv/node-package-template/issues"
+    "url": "https://github.com/vrerv/md-to-notion/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/vrerv/node-package-template/"
+    "url": "https://github.com/vrerv/md-to-notion/"
   },
   "keywords": [
     "vrerv"
@@ -27,9 +27,13 @@
     "test": "jest ./test",
     "check-links": "git ls-files | grep md$ | xargs -n 1 markdown-link-check",
     "prebuild": "npm run clean",
+    "postbuild": "chmod +x build/src/md-to-notion-cli.js",
     "clean": "rm -rf ./build"
   },
-  "author": "",
+  "bin": {
+    "md-to-notion": "./build/src/md-to-notion-cli.js"
+  },
+  "author": "Soonoh Jung",
   "license": "MIT",
   "files": [
     "build/package.json",
