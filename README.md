@@ -31,7 +31,7 @@ npx @vrerv/md-to-notion --help
 
 This package supports the following minimum versions:
 
-- Runtime: `node >= 14`
+- Runtime: `node >= 15`
 - Type definitions (optional): `typescript >= 4.5`
 
 Earlier versions may still work, but we encourage people building new applications to upgrade to the current stable.

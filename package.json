@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "An upload of markdown files to a hierarchy of Notion pages.",
   "engines": {
-    "node": ">=12"
+    "node": ">=15"
   },
   "homepage": "https://vrerv.com",
   "bugs": {
