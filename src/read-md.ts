@@ -12,7 +12,7 @@ export interface Folder {
 
 export interface MarkdownFileData {
   fileName: string
-  blockContent: any
+  blockContent: any[]
 }
 
 const logger = makeConsoleLogger('read-md')
@@ -23,9 +23,10 @@ const logger = makeConsoleLogger('read-md')
  * extracts their content, and converts it to Notion block format.
  *
  * @param dirPath - The path to the directory containing the Markdown files.
+ * @param filterOutFunc - A function that determines if a path should be excluded. node_modules are excluded by default.
  * @returns A hierarchical structure of folders and files that contain Markdown files.
  */
-export function readMarkdownFiles(dirPath: string): Folder | null {
+export function readMarkdownFiles(dirPath: string, filterOutFunc: (path: string) => boolean = (path) => path.includes("node_modules")): Folder | null {
   function walk(currentPath: string): Folder | null {
     const folder: Folder = {
       name: path.basename(currentPath),
@@ -37,6 +38,11 @@ export function readMarkdownFiles(dirPath: string): Folder | null {
 
     for (const entry of entries) {
       const entryPath = path.join(currentPath, entry.name)
+
+      if (filterOutFunc(entryPath)) {
+        continue
+      }
+
       let stats
 
       try {
