@@ -6,11 +6,13 @@ import {
   PartialBlockObjectResponse,
 } from "@notionhq/client/build/src/api-endpoints"
 
-function isBlockObjectResponse(child: PartialBlockObjectResponse | BlockObjectResponse): child is BlockObjectResponse {
-  return (child as BlockObjectResponse).object === 'block'
+function isBlockObjectResponse(
+  child: PartialBlockObjectResponse | BlockObjectResponse
+): child is BlockObjectResponse {
+  return (child as BlockObjectResponse).object === "block"
 }
 
-const logger = makeConsoleLogger('sync-to-notion')
+const logger = makeConsoleLogger("sync-to-notion")
 const NOTION_BLOCK_LIMIT = 100
 
 /**
@@ -22,7 +24,10 @@ function commonPageKey(parentId: string, title: string): string {
   return parentId + title
 }
 
-async function collectCurrentFiles(notion: Client, rootPageId: string): Promise<Map<string, string>> {
+async function collectCurrentFiles(
+  notion: Client,
+  rootPageId: string
+): Promise<Map<string, string>> {
   const linkMap = new Map<string, string>()
 
   async function collectPages(pageId: string, parentId: string) {
@@ -31,17 +36,23 @@ async function collectCurrentFiles(notion: Client, rootPageId: string): Promise<
     })
 
     logger(LogLevel.DEBUG, "", response)
-    if (response.object === 'page') {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      linkMap.set(commonPageKey(parentId, response.properties.title.title[0].text.content), response.id)
+    if (response.object === "page") {
+      linkMap.set(
+        commonPageKey(
+          parentId,
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          response.properties.title.title[0].text.content
+        ),
+        response.id
+      )
       // Retrieve children blocks
       const childrenResponse = await notion.blocks.children.list({
         block_id: pageId,
       })
 
       for (const child of childrenResponse.results) {
-        if (isBlockObjectResponse(child) && child.type === 'child_page') {
+        if (isBlockObjectResponse(child) && child.type === "child_page") {
           await collectPages(child.id, pageId)
         }
       }
@@ -60,11 +71,18 @@ async function collectCurrentFiles(notion: Client, rootPageId: string): Promise<
  * @param dir - The folder structure to sync.
  * @returns A promise that resolves when the synchronization is complete.
  */
-export async function syncToNotion(token: string, pageId: string, dir: Folder): Promise<void> {
+export async function syncToNotion(
+  token: string,
+  pageId: string,
+  dir: Folder
+): Promise<void> {
   const notion = new Client({ auth: token })
   const linkMap = await collectCurrentFiles(notion, pageId)
 
-  async function createOrUpdatePageForFolder(folderName: string, parentId: string): Promise<string> {
+  async function createOrUpdatePageForFolder(
+    folderName: string,
+    parentId: string
+  ): Promise<string> {
     const key = commonPageKey(parentId, folderName)
     if (linkMap.has(key)) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -81,7 +99,10 @@ export async function syncToNotion(token: string, pageId: string, dir: Folder): 
     }
   }
 
-  async function removeAllBlocksFromPage(notion: Client, pageId: string): Promise<void> {
+  async function removeAllBlocksFromPage(
+    notion: Client,
+    pageId: string
+  ): Promise<void> {
     // Retrieve all child blocks of the page
     const childrenResponse = await notion.blocks.children.list({
       block_id: pageId,
@@ -95,11 +116,20 @@ export async function syncToNotion(token: string, pageId: string, dir: Folder): 
     }
   }
 
-  async function createOrUpdatePageForMarkdown(file: MarkdownFileData, parentId: string): Promise<void> {
-    logger(LogLevel.DEBUG, 'Creating or updating page for file', { parentId: parentId, fileName: file.fileName })
+  async function createOrUpdatePageForMarkdown(
+    file: MarkdownFileData,
+    parentId: string
+  ): Promise<void> {
+    logger(LogLevel.DEBUG, "Creating or updating page for file", {
+      parentId: parentId,
+      fileName: file.fileName,
+    })
 
     const key = parentId + file.fileName
-    async function appendBlocksInChunks(pageId: string, blocks: any[]): Promise<void> {
+    async function appendBlocksInChunks(
+      pageId: string,
+      blocks: any[]
+    ): Promise<void> {
       // Append blocks in chunks of NOTION_BLOCK_LIMIT
       for (let i = 0; i < blocks.length; i += NOTION_BLOCK_LIMIT) {
         const chunk = blocks.slice(i, i + NOTION_BLOCK_LIMIT)
@@ -130,12 +160,18 @@ export async function syncToNotion(token: string, pageId: string, dir: Folder): 
         children: file.blockContent.slice(0, NOTION_BLOCK_LIMIT),
       })
       linkMap.set(key, response.id)
-      await appendBlocksInChunks(response.id, file.blockContent.slice(NOTION_BLOCK_LIMIT))
+      await appendBlocksInChunks(
+        response.id,
+        file.blockContent.slice(NOTION_BLOCK_LIMIT)
+      )
     }
   }
 
   async function syncFolder(folder: Folder, parentId: string): Promise<void> {
-    const folderPageId = await createOrUpdatePageForFolder(folder.name, parentId)
+    const folderPageId = await createOrUpdatePageForFolder(
+      folder.name,
+      parentId
+    )
 
     for (const file of folder.files) {
       await createOrUpdatePageForMarkdown(file, folderPageId)

@@ -37,7 +37,7 @@
     "noPropertyAccessFromIndexSignature": true,
     "forceConsistentCasingInFileNames": true,
 
-    "esModuleInterop": true,
+    "esModuleInterop": true
   },
 
   "include": ["src/**/*", "test/**/*"]
