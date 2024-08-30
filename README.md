@@ -19,6 +19,9 @@
 
 ## Usage
 
+You need to get Notion API secret and page ID to upload your markdown files.
+Follow this [guide](./docs/configure-notion.md) to get the secret and page ID.
+
 See [Example Project](./examples/example-project) for live example
 
 ### CLI
