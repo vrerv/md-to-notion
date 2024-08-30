@@ -182,5 +182,11 @@ export async function syncToNotion(
     }
   }
 
-  await syncFolder(dir, pageId)
+  for (const file of dir.files) {
+    await createOrUpdatePageForMarkdown(file, pageId)
+  }
+
+  for (const subfolder of dir.subfolders) {
+    await syncFolder(subfolder, pageId)
+  }
 }
