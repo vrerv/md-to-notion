@@ -3,6 +3,7 @@ import { Folder, MarkdownFileData } from "./read-md"
 import { LogLevel, makeConsoleLogger } from "./logging"
 import {
   BlockObjectResponse,
+  ListBlockChildrenResponse,
   PartialBlockObjectResponse,
 } from "@notionhq/client/build/src/api-endpoints"
 
@@ -99,17 +100,36 @@ export async function syncToNotion(
     }
   }
 
+  async function getExistingBlocks(notion: Client, pageId: string) {
+    const existingBlocks: BlockObjectResponse[] = []
+    let cursor: string | null | undefined = undefined
+
+    do {
+      const response: ListBlockChildrenResponse =
+        await notion.blocks.children.list({
+          block_id: pageId,
+          start_cursor: cursor,
+        })
+      existingBlocks.push(
+        ...(response.results.filter(
+          isBlockObjectResponse
+        ) as BlockObjectResponse[])
+      )
+      cursor = response.has_more ? response.next_cursor : undefined
+    } while (cursor)
+
+    return existingBlocks
+  }
+
   async function removeAllBlocksFromPage(
     notion: Client,
     pageId: string
   ): Promise<void> {
     // Retrieve all child blocks of the page
-    const childrenResponse = await notion.blocks.children.list({
-      block_id: pageId,
-    })
+    const childrenResponse = await getExistingBlocks(notion, pageId)
 
     // Iterate through the list of child blocks and delete each block
-    for (const child of childrenResponse.results) {
+    for (const child of childrenResponse) {
       await notion.blocks.delete({
         block_id: child.id,
       })
@@ -167,11 +187,15 @@ export async function syncToNotion(
     }
   }
 
-  async function syncFolder(folder: Folder, parentId: string): Promise<void> {
-    const folderPageId = await createOrUpdatePageForFolder(
-      folder.name,
-      parentId
-    )
+  async function syncFolder(
+    folder: Folder,
+    parentId: string,
+    createFolder = true
+  ): Promise<void> {
+    let folderPageId = parentId
+    if (createFolder) {
+      folderPageId = await createOrUpdatePageForFolder(folder.name, parentId)
+    }
 
     for (const file of folder.files) {
       await createOrUpdatePageForMarkdown(file, folderPageId)
@@ -182,11 +206,5 @@ export async function syncToNotion(
     }
   }
 
-  for (const file of dir.files) {
-    await createOrUpdatePageForMarkdown(file, pageId)
-  }
-
-  for (const subfolder of dir.subfolders) {
-    await syncFolder(subfolder, pageId)
-  }
+  await syncFolder(dir, pageId, false)
 }
