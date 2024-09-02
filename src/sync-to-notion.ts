@@ -47,7 +47,6 @@ async function collectCurrentFiles(
         ),
         response.id
       )
-      // Retrieve children blocks
       const childrenResponse = await notion.blocks.children.list({
         block_id: pageId,
       })
@@ -95,7 +94,7 @@ export async function syncToNotion(
           title: [{ text: { content: folderName } }],
         },
       })
-      linkMap.set(parentId + folderName, response.id)
+      linkMap.set(key, response.id)
       return response.id
     }
   }
