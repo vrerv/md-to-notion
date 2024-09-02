@@ -162,12 +162,6 @@ export async function syncToNotion(
     if (linkMap.has(key)) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const pageId = linkMap.get(key)!
-      // await notion.pages.update({
-      //   page_id: pageId,
-      //   properties: {
-      //     title: [{ text: { content: file.fileName } }],
-      //   },
-      // })
       await removeAllBlocksFromPage(notion, pageId)
       await appendBlocksInChunks(pageId, file.blockContent)
     } else {
