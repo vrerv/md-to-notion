@@ -75,7 +75,11 @@ export function readMarkdownFiles(
           fileName: fileNameWithoutExtension,
           getContent: (linkMap: Map<string, string>) => {
             const noLinkContent = removeMarkdownLinks(
-              replaceInternalMarkdownLinks(content, linkMap, entryPath)
+              replaceInternalMarkdownLinks(
+                content,
+                linkMap,
+                entryPath.substring(dirPath.length + 1)
+              )
             )
             return markdownToBlocks(noLinkContent)
           },
