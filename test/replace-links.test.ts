@@ -157,7 +157,7 @@ describe("removeMarkdownLinks", () => {
 
   it("keep anchor links", () => {
     const content = "follow [link1](#section1)"
-    const result = removeMarkdownLinks(content)
+    const result = removeMarkdownLinks(content, true)
     expect(result).toBe("follow [link1](#section1)")
   })
 

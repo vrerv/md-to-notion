@@ -1,7 +1,9 @@
 // Regular expression to match markdown links: [text](link)
 import { LogLevel, makeConsoleLogger } from "./logging"
 
-export const MARKDOWN_LINK_REGEX = /\[([^\]]+)]\(((?!(#|https?:\/\/))[^)]+)\)/g
+export const MARKDOWN_LINK_KEEP_ANCHOR_REGEX =
+  /\[([^\]]+)]\(((?!(#|https?:\/\/))[^)]+)\)/g
+export const MARKDOWN_LINK_REGEX = /\[([^\]]+)]\(((?!(https?:\/\/))[^)]+)\)/g
 
 const logger = makeConsoleLogger("replace-links")
 
@@ -31,8 +33,14 @@ export function replaceInternalMarkdownLinks(
  * @param content - The content to process.
  * @returns The content with links removed.
  */
-export function removeMarkdownLinks(content: string): string {
-  return content.replace(MARKDOWN_LINK_REGEX, "$1")
+export function removeMarkdownLinks(
+  content: string,
+  keepAnchor = false
+): string {
+  return content.replace(
+    keepAnchor ? MARKDOWN_LINK_KEEP_ANCHOR_REGEX : MARKDOWN_LINK_REGEX,
+    "$1"
+  )
 }
 
 // Helper function to resolve link paths based on the filePathFromRoot and relative links
