@@ -3,7 +3,9 @@ import { Folder, MarkdownFileData } from "./read-md"
 import { LogLevel, makeConsoleLogger } from "./logging"
 import {
   BlockObjectResponse,
+  GetPageResponse,
   ListBlockChildrenResponse,
+  PageObjectResponse,
   PartialBlockObjectResponse,
 } from "@notionhq/client/build/src/api-endpoints"
 
@@ -16,78 +18,115 @@ function isBlockObjectResponse(
 const logger = makeConsoleLogger("sync-to-notion")
 const NOTION_BLOCK_LIMIT = 100
 
+export type NotionPageLink = {
+  id: string
+  link: string
+}
+
 /**
  * Generates a unique key for a page based on its parent ID and title to find markdown file in Notion.
  * @param parentId - The notion page ID of the parent page.
  * @param title
  */
 function commonPageKey(parentId: string, title: string): string {
-  return parentId + title
+  return `${parentId}/${title}`
 }
 
-async function collectCurrentFiles(
+function getPageTitle(pageResponse: GetPageResponse): string {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  return pageResponse.properties.title.title[0].text.content
+}
+
+function newNotionPageLink(response: PageObjectResponse): NotionPageLink {
+  return {
+    id: response.id,
+    link: response.url,
+  }
+}
+
+export async function collectCurrentFiles(
   notion: Client,
   rootPageId: string
-): Promise<Map<string, string>> {
-  const linkMap = new Map<string, string>()
+): Promise<Map<string, NotionPageLink>> {
+  const linkMap = new Map<string, NotionPageLink>()
 
-  async function collectPages(pageId: string, parentId: string) {
+  async function collectPages(pageId: string, parentTitle: string) {
     const response = await notion.pages.retrieve({
       page_id: pageId,
     })
 
     logger(LogLevel.DEBUG, "", response)
+
+    const pageTitle = getPageTitle(response)
+
     if (response.object === "page") {
       linkMap.set(
-        commonPageKey(
-          parentId,
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          response.properties.title.title[0].text.content
-        ),
-        response.id
+        commonPageKey(parentTitle, pageTitle),
+        newNotionPageLink(response as PageObjectResponse)
       )
-      // Retrieve children blocks
       const childrenResponse = await notion.blocks.children.list({
         block_id: pageId,
       })
 
       for (const child of childrenResponse.results) {
         if (isBlockObjectResponse(child) && child.type === "child_page") {
-          await collectPages(child.id, pageId)
+          await collectPages(
+            child.id,
+            pageId === rootPageId ? "." : parentTitle + "/" + pageTitle
+          )
         }
       }
     }
   }
 
-  await collectPages(rootPageId, rootPageId)
+  await collectPages(rootPageId, ".")
   return linkMap
 }
 
 /**
  * Synchronizes a folder structure to a Notion page.
  *
- * @param token - The Notion integration token.
+ * @param notion
  * @param pageId - The ID of the Notion page to sync the content to.
  * @param dir - The folder structure to sync.
+ * @param linkMap
  * @returns A promise that resolves when the synchronization is complete.
  */
 export async function syncToNotion(
-  token: string,
+  notion: Client,
   pageId: string,
-  dir: Folder
+  dir: Folder,
+  linkMap: Map<string, NotionPageLink> = new Map<string, NotionPageLink>()
 ): Promise<void> {
-  const notion = new Client({ auth: token })
-  const linkMap = await collectCurrentFiles(notion, pageId)
+  async function appendBlocksInChunks(
+    pageId: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    blocks: any[]
+  ): Promise<void> {
+    // Append blocks in chunks of NOTION_BLOCK_LIMIT
+    for (let i = 0; i < blocks.length; i += NOTION_BLOCK_LIMIT) {
+      const chunk = blocks.slice(i, i + NOTION_BLOCK_LIMIT)
+      await notion.blocks.children.append({
+        block_id: pageId,
+        children: chunk,
+      })
+    }
+  }
 
-  async function createOrUpdatePageForFolder(
+  async function createOrUpdatePage(
     folderName: string,
-    parentId: string
+    parentId: string,
+    parentName: string,
+    onUpdated: (pageId: string) => Promise<void>
   ): Promise<string> {
-    const key = commonPageKey(parentId, folderName)
+    const key = commonPageKey(parentName, folderName)
+    logger(LogLevel.INFO, "Create page", { key: key })
     if (linkMap.has(key)) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      return linkMap.get(key)!
+      const pageId = linkMap.get(key)!.id
+      await onUpdated(pageId)
+      return pageId
     } else {
       const response = await notion.pages.create({
         parent: { page_id: parentId },
@@ -95,7 +134,7 @@ export async function syncToNotion(
           title: [{ text: { content: folderName } }],
         },
       })
-      linkMap.set(parentId + folderName, response.id)
+      linkMap.set(key, newNotionPageLink(response as PageObjectResponse))
       return response.id
     }
   }
@@ -136,75 +175,52 @@ export async function syncToNotion(
     }
   }
 
-  async function createOrUpdatePageForMarkdown(
-    file: MarkdownFileData,
-    parentId: string
-  ): Promise<void> {
-    logger(LogLevel.DEBUG, "Creating or updating page for file", {
-      parentId: parentId,
-      fileName: file.fileName,
-    })
-
-    const key = parentId + file.fileName
-    async function appendBlocksInChunks(
-      pageId: string,
-      blocks: any[]
-    ): Promise<void> {
-      // Append blocks in chunks of NOTION_BLOCK_LIMIT
-      for (let i = 0; i < blocks.length; i += NOTION_BLOCK_LIMIT) {
-        const chunk = blocks.slice(i, i + NOTION_BLOCK_LIMIT)
-        await notion.blocks.children.append({
-          block_id: pageId,
-          children: chunk,
-        })
-      }
-    }
-
-    if (linkMap.has(key)) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const pageId = linkMap.get(key)!
-      // await notion.pages.update({
-      //   page_id: pageId,
-      //   properties: {
-      //     title: [{ text: { content: file.fileName } }],
-      //   },
-      // })
-      await removeAllBlocksFromPage(notion, pageId)
-      await appendBlocksInChunks(pageId, file.blockContent)
-    } else {
-      const response = await notion.pages.create({
-        parent: { page_id: parentId },
-        properties: {
-          title: [{ text: { content: file.fileName } }],
-        },
-        children: file.blockContent.slice(0, NOTION_BLOCK_LIMIT),
-      })
-      linkMap.set(key, response.id)
-      await appendBlocksInChunks(
-        response.id,
-        file.blockContent.slice(NOTION_BLOCK_LIMIT)
-      )
-    }
-  }
-
   async function syncFolder(
     folder: Folder,
     parentId: string,
-    createFolder = true
+    parentName: string,
+    createFolder = true,
+    pages: Array<{ pageId: string; file: MarkdownFileData }>
   ): Promise<void> {
     let folderPageId = parentId
     if (createFolder) {
-      folderPageId = await createOrUpdatePageForFolder(folder.name, parentId)
+      folderPageId = await createOrUpdatePage(
+        folder.name,
+        parentId,
+        parentName,
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
+        async () => {}
+      )
     }
 
+    const childParentName =
+      dir.name === folder.name ? parentName : parentName + "/" + folder.name
+
     for (const file of folder.files) {
-      await createOrUpdatePageForMarkdown(file, folderPageId)
+      const pageId = await createOrUpdatePage(
+        file.fileName,
+        folderPageId,
+        childParentName,
+        async pageId => {
+          await removeAllBlocksFromPage(notion, pageId)
+        }
+      )
+      pages.push({ pageId: pageId, file: file })
     }
 
     for (const subfolder of folder.subfolders) {
-      await syncFolder(subfolder, folderPageId)
+      await syncFolder(subfolder, folderPageId, childParentName, true, pages)
     }
   }
 
-  await syncFolder(dir, pageId, false)
+  const pages = [] as Array<{ pageId: string; file: MarkdownFileData }>
+  await syncFolder(dir, pageId, ".", false, pages)
+
+  const linkUrlMap = new Map<string, string>(
+    Array.from(linkMap.entries()).map(([key, value]) => [key, value.link])
+  )
+  for (const page of pages) {
+    logger(LogLevel.INFO, "Append blocks", { pageId: page.pageId })
+    await appendBlocksInChunks(page.pageId, page.file.getContent(linkUrlMap))
+  }
 }

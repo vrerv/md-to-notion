@@ -1,22 +1,15 @@
 import {
-  readMarkdownFiles,
   printFolderHierarchy,
+  readMarkdownFiles,
   syncToNotion,
-  makeConsoleLogger,
-  LogLevel,
 } from "@vrerv/md-to-notion"
-
-const logger = makeConsoleLogger()
+import { Client } from "@notionhq/client"
 
 async function main() {
+  const notion = new Client({ auth: process.env.NOTION_API_TOKEN })
   const dir = readMarkdownFiles("./docs")
   printFolderHierarchy(dir)
-  //logger(LogLevel.DEBUG, "", dir)
-  await syncToNotion(
-    process.env.NOTION_API_TOKEN,
-    "9d82d1c88ffa422e84472fb3b1d7c8b8",
-    dir
-  )
+  await syncToNotion(notion, "9d82d1c88ffa422e84472fb3b1d7c8b8", dir)
 }
 
 main()
