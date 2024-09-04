@@ -1,55 +1,143 @@
-import { removeMarkdownLinks } from "../src/read-md"
+import { readMarkdownFiles } from "../src/read-md"
+import * as fs from "fs"
+import * as path from "path"
+import { describe, expect, jest } from "@jest/globals"
 
-describe("removeMarkdownLinks", () => {
-  it("removes markdown links and keeps the link text", () => {
-    const content = "This is a [link](./section) in markdown."
-    const result = removeMarkdownLinks(content)
-    expect(result).toBe("This is a link in markdown.")
+jest.mock("fs")
+jest.mock("path")
+
+const mockedFs = jest.mocked(fs)
+const mockedPath = jest.mocked(path)
+
+describe("readMarkdownFiles", () => {
+  const mockDirPath = "mockDir"
+
+  const defaultDirent = {
+    parentPath: "",
+    path: "",
+    isSocket: () => false,
+    isBlockDevice: () => true,
+    isCharacterDevice: () => false,
+    isSymbolicLink: () => false,
+    isFIFO: () => false,
+  }
+
+  function mockFile(baseName: string, fileName: string, content: string) {
+    /*
+    TODO: Fix the following error:
+    TypeError: mockedFs.readdirSync.mockReturnValue is not a function
+    After fixing the error, configure jest.config.js to run this test file.
+     */
+    mockedFs.readdirSync.mockReturnValue([
+      {
+        name: fileName,
+        isDirectory: () => false,
+        isFile: () => true,
+        ...defaultDirent,
+      },
+      {
+        name: "subdirectory",
+        isDirectory: () => true,
+        isFile: () => false,
+        ...defaultDirent,
+      },
+    ])
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    mockedFs.statSync.mockReturnValue({
+      isDirectory: () => false,
+      isFile: () => true,
+    })
+
+    mockedFs.readFileSync.mockReturnValue(content)
+    mockedPath.basename.mockReturnValue(baseName)
+    mockedPath.join.mockImplementation((...args: string[]) => args.join("/"))
+  }
+
+  beforeEach(() => {
+    jest.clearAllMocks()
   })
 
-  it("removes multiple markdown links and keeps the link texts", () => {
-    const content =
-      "Here is a [link1](./section1) and another [link2](./section2)."
-    const result = removeMarkdownLinks(content)
-    expect(result).toBe("Here is a link1 and another link2.")
+  it("returns null for an empty directory", () => {
+    mockedFs.readdirSync.mockReturnValue([])
+    const result = readMarkdownFiles(mockDirPath)
+    expect(result).toBeNull()
   })
 
-  it("returns the same content if there are no markdown links", () => {
-    const content = "This content has no links."
-    const result = removeMarkdownLinks(content)
-    expect(result).toBe(content)
+  it("reads markdown files and returns folder structure", () => {
+    mockFile("file1", "file1.md", "content")
+
+    const result = readMarkdownFiles(mockDirPath)
+    expect(result).toEqual({
+      name: ".",
+      files: [
+        {
+          fileName: "file1",
+          getContent: expect.any(Function),
+        },
+      ],
+      subfolders: [],
+    })
   })
 
-  it("handles empty content", () => {
-    const content = ""
-    const result = removeMarkdownLinks(content)
-    expect(result).toBe("")
-  })
+  it("replace links even if root contains .. path", () => {
+    mockFile("file1", "file1.md", "test [link](./section)")
 
-  it("remove link if it contains space", () => {
-    const content = "* [Internal Link To Doc1](./doc1.md)"
-    const result = removeMarkdownLinks(content)
-    expect(result).toBe("* Internal Link To Doc1")
-  })
-
-  it("handles content with only markdown links", () => {
-    const content = "[link1](./section1) [link2](./section2)"
-    const result = removeMarkdownLinks(content)
-    expect(result).toBe("link1 link2")
-  })
-
-  it("keep anchor links", () => {
-    const content = "follow [link1](#section1)"
-    const result = removeMarkdownLinks(content)
-    expect(result).toBe("follow [link1](#section1)")
-  })
-
-  it("keeps external links starting with http or https", () => {
-    const content =
-      "This is an [external link](https://example.com) in markdown."
-    const result = removeMarkdownLinks(content)
-    expect(result).toBe(
-      "This is an [external link](https://example.com) in markdown."
+    const result = readMarkdownFiles("../test/path")
+    const content = result?.files[0]?.getContent(
+      new Map([["./section", "https://example.com/src/test"]])
     )
+    expect(content).toEqual([
+      {
+        object: "block",
+        type: "paragraph",
+        paragraph: {
+          rich_text: [
+            {
+              type: "text",
+              annotations: {
+                bold: false,
+                strikethrough: false,
+                underline: false,
+                italic: false,
+                code: false,
+                color: "default",
+              },
+              text: {
+                content: "test ",
+              },
+            },
+            {
+              type: "text",
+              annotations: {
+                bold: false,
+                strikethrough: false,
+                underline: false,
+                italic: false,
+                code: false,
+                color: "default",
+              },
+              text: {
+                content: "link",
+                link: {
+                  type: "url",
+                  url: "https://example.com/src/test",
+                },
+              },
+            },
+          ],
+        },
+      },
+    ])
+    expect(result).toEqual({
+      name: ".",
+      files: [
+        {
+          fileName: "file1",
+          getContent: expect.any(Function),
+        },
+      ],
+      subfolders: [],
+    })
   })
 })

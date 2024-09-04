@@ -1,5 +1,11 @@
 // Regular expression to match markdown links: [text](link)
-export const MARKDOWN_LINK_REGEX = /\[([^\]]+)]\(((?!(#|https?:\/\/))[^)]+)\)/g
+import { LogLevel, makeConsoleLogger } from "./logging"
+
+export const MARKDOWN_LINK_KEEP_ANCHOR_REGEX =
+  /\[([^\]]+)]\(((?!(#|https?:\/\/))[^)]+)\)/g
+export const MARKDOWN_LINK_REGEX = /\[([^\]]+)]\(((?!(https?:\/\/))[^)]+)\)/g
+
+const logger = makeConsoleLogger("replace-links")
 
 export function replaceInternalMarkdownLinks(
   markdownContent: string,
@@ -12,12 +18,29 @@ export function replaceInternalMarkdownLinks(
     const resolvedLinkPath = resolveLinkPath(filePathFromRoot, link)
     const key = resolvedLinkPath.replace(".md", "") // Remove the .md extension
     const url = linkMap.get(key)
+    logger(LogLevel.DEBUG, "try to replace link", { key, url: url })
     if (url) {
       return `[${text}](${url})`
     }
     // If no match in the map, return the original match
     return match
   })
+}
+
+/**
+ * Removes internal Markdown links from the content for Notion.
+ *
+ * @param content - The content to process.
+ * @returns The content with links removed.
+ */
+export function removeMarkdownLinks(
+  content: string,
+  keepAnchor = false
+): string {
+  return content.replace(
+    keepAnchor ? MARKDOWN_LINK_KEEP_ANCHOR_REGEX : MARKDOWN_LINK_REGEX,
+    "$1"
+  )
 }
 
 // Helper function to resolve link paths based on the filePathFromRoot and relative links

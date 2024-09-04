@@ -4,7 +4,7 @@ import matter from "gray-matter"
 import { markdownToBlocks } from "@tryfabric/martian"
 import { LogLevel, makeConsoleLogger } from "./logging"
 import {
-  MARKDOWN_LINK_REGEX,
+  removeMarkdownLinks,
   replaceInternalMarkdownLinks,
 } from "./replace-links"
 
@@ -75,7 +75,11 @@ export function readMarkdownFiles(
           fileName: fileNameWithoutExtension,
           getContent: (linkMap: Map<string, string>) => {
             const noLinkContent = removeMarkdownLinks(
-              replaceInternalMarkdownLinks(content, linkMap, entryPath)
+              replaceInternalMarkdownLinks(
+                content,
+                linkMap,
+                entryPath.substring(dirPath.length + 1)
+              )
             )
             return markdownToBlocks(noLinkContent)
           },
@@ -90,16 +94,6 @@ export function readMarkdownFiles(
   }
 
   return walk(dirPath)
-}
-
-/**
- * Removes internal Markdown links from the content for Notion.
- *
- * @param content - The content to process.
- * @returns The content with links removed.
- */
-export function removeMarkdownLinks(content: string): string {
-  return content.replace(MARKDOWN_LINK_REGEX, "$1")
 }
 
 /**
