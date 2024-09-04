@@ -1,9 +1,13 @@
 import { readMarkdownFiles } from "../src/read-md"
 import * as fs from "fs"
 import * as path from "path"
+import { describe, expect, jest } from "@jest/globals"
 
 jest.mock("fs")
 jest.mock("path")
+
+const mockedFs = jest.mocked(fs)
+const mockedPath = jest.mocked(path)
 
 describe("readMarkdownFiles", () => {
   const mockDirPath = "mockDir"
@@ -19,7 +23,12 @@ describe("readMarkdownFiles", () => {
   }
 
   function mockFile(baseName: string, fileName: string, content: string) {
-    jest.mocked(fs.readdirSync).mockReturnValue([
+    /*
+    TODO: Fix the following error:
+    TypeError: mockedFs.readdirSync.mockReturnValue is not a function
+    After fixing the error, configure jest.config.js to run this test file.
+     */
+    mockedFs.readdirSync.mockReturnValue([
       {
         name: fileName,
         isDirectory: () => false,
@@ -35,13 +44,14 @@ describe("readMarkdownFiles", () => {
     ])
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    jest.mocked(fs.statSync).mockReturnValue({
+    mockedFs.statSync.mockReturnValue({
       isDirectory: () => false,
       isFile: () => true,
     })
-    jest.mocked(fs.readFileSync).mockReturnValue(content)
-    jest.mocked(path.basename).mockReturnValue(baseName)
-    jest.mocked(path.join).mockImplementation((...args) => args.join("/"))
+
+    mockedFs.readFileSync.mockReturnValue(content)
+    mockedPath.basename.mockReturnValue(baseName)
+    mockedPath.join.mockImplementation((...args: string[]) => args.join("/"))
   }
 
   beforeEach(() => {
@@ -49,7 +59,7 @@ describe("readMarkdownFiles", () => {
   })
 
   it("returns null for an empty directory", () => {
-    jest.mocked(fs.readdirSync).mockReturnValue([])
+    mockedFs.readdirSync.mockReturnValue([])
     const result = readMarkdownFiles(mockDirPath)
     expect(result).toBeNull()
   })
@@ -77,7 +87,6 @@ describe("readMarkdownFiles", () => {
     const content = result?.files[0]?.getContent(
       new Map([["./section", "https://example.com/src/test"]])
     )
-    console.log(JSON.stringify(content, null, 2))
     expect(content).toEqual([
       {
         object: "block",
