@@ -13,8 +13,8 @@
 
 - [x] Upload markdown files to Notion pages with hierarchy
 - [x] Update existing pages if the file name is same. however this is slow as it needs to fetch all pages and remove all blocks before update the page (you can delete root page before running this to create new pages rather updates)
+- [x] internal links are converted to Notion page links
 - [ ] Upload images to Notion
-- [ ] internal links are converted to Notion page links
 - [ ] only updates the blocks if the content is changed
 
 ## Usage

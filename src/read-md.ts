@@ -3,6 +3,10 @@ import * as path from "path"
 import matter from "gray-matter"
 import { markdownToBlocks } from "@tryfabric/martian"
 import { LogLevel, makeConsoleLogger } from "./logging"
+import {
+  MARKDOWN_LINK_REGEX,
+  replaceInternalMarkdownLinks,
+} from "./replace-links"
 
 export interface Folder {
   name: string
@@ -12,7 +16,8 @@ export interface Folder {
 
 export interface MarkdownFileData {
   fileName: string
-  blockContent: any[]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getContent: (linkMap: Map<string, string>) => any[]
 }
 
 const logger = makeConsoleLogger("read-md")
@@ -33,7 +38,7 @@ export function readMarkdownFiles(
 ): Folder | null {
   function walk(currentPath: string): Folder | null {
     const folder: Folder = {
-      name: path.basename(currentPath),
+      name: dirPath === currentPath ? "." : path.basename(currentPath),
       files: [],
       subfolders: [],
     }
@@ -64,11 +69,17 @@ export function readMarkdownFiles(
         }
       } else if (stats.isFile() && entry.name.endsWith(".md")) {
         const content = matter(fs.readFileSync(entryPath, "utf-8")).content
-        const noLinkContent = removeMarkdownLinks(content)
-        const blockContent = markdownToBlocks(noLinkContent)
-
         const fileNameWithoutExtension = path.basename(entry.name, ".md")
-        folder.files.push({ fileName: fileNameWithoutExtension, blockContent })
+
+        folder.files.push({
+          fileName: fileNameWithoutExtension,
+          getContent: (linkMap: Map<string, string>) => {
+            const noLinkContent = removeMarkdownLinks(
+              replaceInternalMarkdownLinks(content, linkMap, entryPath)
+            )
+            return markdownToBlocks(noLinkContent)
+          },
+        })
       }
     }
 
@@ -88,7 +99,7 @@ export function readMarkdownFiles(
  * @returns The content with links removed.
  */
 export function removeMarkdownLinks(content: string): string {
-  return content.replace(/\[([^\]]+)]\((?!(#|https?:\/\/))[^)]+\)/g, "$1")
+  return content.replace(MARKDOWN_LINK_REGEX, "$1")
 }
 
 /**

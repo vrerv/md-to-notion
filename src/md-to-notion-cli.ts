@@ -3,6 +3,8 @@
 import { printFolderHierarchy, readMarkdownFiles, syncToNotion } from "./index"
 import { Command } from "commander"
 import { description, version } from "../package.json"
+import { Client } from "@notionhq/client"
+import { collectCurrentFiles } from "./sync-to-notion"
 
 const program = new Command()
 
@@ -17,7 +19,9 @@ async function main(
   }
 
   if (dir) {
-    await syncToNotion(options.token, options.pageId, dir)
+    const notion = new Client({ auth: options.token })
+    const linkMap = await collectCurrentFiles(notion, options.pageId)
+    await syncToNotion(notion, options.pageId, dir, linkMap)
   }
 
   console.log("Sync complete!")
