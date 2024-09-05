@@ -13,6 +13,7 @@ export interface Logger {
 
 export function makeConsoleLogger(
   name = "default",
+  logLevel = LogLevel.INFO,
   options = {
     inspectOptions: {
       depth: null,
@@ -23,7 +24,9 @@ export function makeConsoleLogger(
 ): Logger {
   return (level, message, extraInfo) => {
     const logger = new console.Console(options)
-    logger[level](`${name} ${level}:`, message, extraInfo ? extraInfo : "")
+    if (logLevelSeverity(logLevel) <= logLevelSeverity(level)) {
+      logger[level](`${name} ${level}:`, message, extraInfo ? extraInfo : "")
+    }
   }
 }
 
