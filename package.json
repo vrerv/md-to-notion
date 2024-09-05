@@ -47,6 +47,7 @@
     "@notionhq/client": "^2.2.3",
     "@tryfabric/martian": "^1.2.4",
     "@types/jest": "^29.5.12",
+    "commander": "^12.1.0",
     "gray-matter": "^4.0.3"
   },
   "devDependencies": {
