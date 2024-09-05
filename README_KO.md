@@ -23,7 +23,7 @@
 노션의 API 시크릿과 페이지 ID를 얻어야 마크다운 파일을 업로드할 수 있습니다.
 이 [가이드](./docs/configure-notion_KO.md)를 따라 시크릿과 페이지 ID를 얻으세요.
 
-작동하는 [예제 프로젝트](./example/example-project)를 확인하세요.
+작동하는 [예제 프로젝트](./examples/example-project)를 확인하세요.
 
 ### CLI (명령행 인터페이스)
 
