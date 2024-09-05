@@ -78,7 +78,7 @@ export function readMarkdownFiles(
               replaceInternalMarkdownLinks(
                 content,
                 linkMap,
-                entryPath.substring(dirPath.length + 1)
+                path.relative(dirPath, entryPath)
               )
             )
             return markdownToBlocks(noLinkContent)

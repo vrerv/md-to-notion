@@ -18,7 +18,11 @@ export function replaceInternalMarkdownLinks(
     const resolvedLinkPath = resolveLinkPath(filePathFromRoot, link)
     const key = resolvedLinkPath.replace(".md", "") // Remove the .md extension
     const url = linkMap.get(key)
-    logger(LogLevel.DEBUG, "try to replace link", { key, url: url })
+    logger(LogLevel.DEBUG, "try to replace link", {
+      key,
+      filePathFromRoot,
+      url: url,
+    })
     if (url) {
       return `[${text}](${url})`
     }
