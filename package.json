@@ -14,7 +14,11 @@
     "url": "https://github.com/vrerv/md-to-notion/"
   },
   "keywords": [
-    "vrerv"
+    "notion",
+    "markdown",
+    "cli",
+    "notion-api",
+    "block"
   ],
   "main": "./build/src",
   "types": "./build/src/index.d.ts",
