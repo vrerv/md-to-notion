@@ -9,6 +9,8 @@
 ![Build status](https://github.com/vrerv/md-to-notion/actions/workflows/ci.yml/badge.svg)
 [![npm version](https://badge.fury.io/js/%40vrerv%2Fmd-to-notion.svg)](https://www.npmjs.com/package/@vrerv/md-to-notion)
 
+[🇰🇷 (한국어)](./README_KO.md) | [🇬🇧 (English)](./README.md)
+
 ## Features
 
 - [x] Upload markdown files to Notion pages with hierarchy
@@ -29,7 +31,7 @@ See [Example Project](./examples/example-project) for live example
 npx @vrerv/md-to-notion --help
 ```
 
-Update all markdown files current directory to Notion page
+Update all markdown files under the current directory to Notion page
 
 ```bash
 npx @vrerv/md-to-notion -t <notion-api-secret> -p <notion-page-id> .
