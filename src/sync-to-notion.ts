@@ -8,6 +8,7 @@ import {
   PageObjectResponse,
   PartialBlockObjectResponse,
 } from "@notionhq/client/build/src/api-endpoints"
+import { mergeBlocks } from "./merge-blocks"
 
 function isBlockObjectResponse(
   child: PartialBlockObjectResponse | BlockObjectResponse
@@ -102,7 +103,8 @@ export async function syncToNotion(
   async function appendBlocksInChunks(
     pageId: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    blocks: any[]
+    blocks: any[],
+    afterId: string | null = null
   ): Promise<void> {
     // Append blocks in chunks of NOTION_BLOCK_LIMIT
     for (let i = 0; i < blocks.length; i += NOTION_BLOCK_LIMIT) {
@@ -110,6 +112,7 @@ export async function syncToNotion(
       await notion.blocks.children.append({
         block_id: pageId,
         children: chunk,
+        after: afterId ? afterId : undefined,
       })
     }
   }
@@ -160,21 +163,6 @@ export async function syncToNotion(
     return existingBlocks
   }
 
-  async function removeAllBlocksFromPage(
-    notion: Client,
-    pageId: string
-  ): Promise<void> {
-    // Retrieve all child blocks of the page
-    const childrenResponse = await getExistingBlocks(notion, pageId)
-
-    // Iterate through the list of child blocks and delete each block
-    for (const child of childrenResponse) {
-      await notion.blocks.delete({
-        block_id: child.id,
-      })
-    }
-  }
-
   async function syncFolder(
     folder: Folder,
     parentId: string,
@@ -188,8 +176,9 @@ export async function syncToNotion(
         folder.name,
         parentId,
         parentName,
-        // eslint-disable-next-line @typescript-eslint/no-empty-function
-        async () => {}
+        async _ => {
+          /* do nothing */
+        }
       )
     }
 
@@ -201,8 +190,8 @@ export async function syncToNotion(
         file.fileName,
         folderPageId,
         childParentName,
-        async pageId => {
-          await removeAllBlocksFromPage(notion, pageId)
+        async _ => {
+          /* do nothing */
         }
       )
       pages.push({ pageId: pageId, file: file })
@@ -213,14 +202,58 @@ export async function syncToNotion(
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async function updateBlocks(pageId: string, newBlocks: any[]) {
+    const blockIdSetToDelete = new Set<string>()
+    const existingBlocks = await getExistingBlocks(notion, pageId)
+    await mergeBlocks(
+      existingBlocks,
+      newBlocks,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      async (blocks: any[], after: any) => {
+        let afterId = after?.id
+        let appendBlocks = blocks
+        if (
+          (after === null || after === undefined) &&
+          existingBlocks.length > 0 &&
+          existingBlocks[0]?.id
+        ) {
+          // to overcome the limitation of the Notion API that requires an after block to append blocks,
+          // append to after first block and delete first block
+          afterId = existingBlocks[0]?.id
+          appendBlocks = blockIdSetToDelete.has(afterId)
+            ? blocks
+            : [...blocks, existingBlocks[0]]
+          blockIdSetToDelete.add(afterId)
+        }
+        logger(LogLevel.INFO, "Appending blocks", { blocks, after })
+        await appendBlocksInChunks(pageId, appendBlocks, afterId)
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      async (block: any) => {
+        blockIdSetToDelete.add(block.id)
+      }
+    )
+    for (const blockId of blockIdSetToDelete) {
+      logger(LogLevel.INFO, "Deleting a block", { blockId })
+      await notion.blocks.delete({ block_id: blockId })
+    }
+  }
+
   const pages = [] as Array<{ pageId: string; file: MarkdownFileData }>
   await syncFolder(dir, pageId, ".", false, pages)
 
   const linkUrlMap = new Map<string, string>(
     Array.from(linkMap.entries()).map(([key, value]) => [key, value.link])
   )
+
   for (const page of pages) {
-    logger(LogLevel.INFO, "Append blocks", { pageId: page.pageId })
-    await appendBlocksInChunks(page.pageId, page.file.getContent(linkUrlMap))
+    const blocks = page.file.getContent(linkUrlMap)
+    logger(LogLevel.INFO, "Update blocks", {
+      pageId: page.pageId,
+      file: page.file,
+      newBlockSize: blocks.length,
+    })
+    await updateBlocks(page.pageId, blocks)
   }
 }
