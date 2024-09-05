@@ -28,13 +28,12 @@ const logger = makeConsoleLogger("read-md")
  * extracts their content, and converts it to Notion block format.
  *
  * @param dirPath - The path to the directory containing the Markdown files.
- * @param filterOutFunc - A function that determines if a path should be excluded. node_modules are excluded by default.
+ * @param filter - A function that determines if a path should be processed. node_modules are excluded by default.
  * @returns A hierarchical structure of folders and files that contain Markdown files.
  */
 export function readMarkdownFiles(
   dirPath: string,
-  filterOutFunc: (path: string) => boolean = path =>
-    path.includes("node_modules")
+  filter: (path: string) => boolean = path => !path.includes("node_modules")
 ): Folder | null {
   function walk(currentPath: string): Folder | null {
     const folder: Folder = {
@@ -47,8 +46,11 @@ export function readMarkdownFiles(
 
     for (const entry of entries) {
       const entryPath = path.join(currentPath, entry.name)
+      const pathFromRoot = path.relative(dirPath, entryPath)
 
-      if (filterOutFunc(entryPath)) {
+      // Add ./ to the path to match start of the path
+      if (!filter("./" + pathFromRoot)) {
+        logger(LogLevel.INFO, `Skipping path: ${pathFromRoot}`)
         continue
       }
 
@@ -75,11 +77,7 @@ export function readMarkdownFiles(
           fileName: fileNameWithoutExtension,
           getContent: (linkMap: Map<string, string>) => {
             const noLinkContent = removeMarkdownLinks(
-              replaceInternalMarkdownLinks(
-                content,
-                linkMap,
-                path.relative(dirPath, entryPath)
-              )
+              replaceInternalMarkdownLinks(content, linkMap, pathFromRoot)
             )
             return markdownToBlocks(noLinkContent)
           },

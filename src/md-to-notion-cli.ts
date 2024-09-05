@@ -10,9 +10,19 @@ const program = new Command()
 
 async function main(
   directory: string,
-  options: { verbose: boolean; token: string; pageId: string }
+  options: {
+    verbose: boolean
+    token: string
+    pageId: string
+    include: string
+    exclude: string
+  }
 ) {
-  const dir = readMarkdownFiles(directory)
+  const dir = readMarkdownFiles(directory, path => {
+    const exclude = options.exclude || "node_modules"
+    const include = options.include || path
+    return path.includes(include) && !path.includes(exclude)
+  })
 
   if (options.verbose) {
     printFolderHierarchy(dir)
@@ -40,6 +50,10 @@ program
     "-p, --page-id <id>",
     "Target Notion root page ID, default is env MD_TO_NOTION_PAGE_ID",
     process.env["MD_TO_NOTION_PAGE_ID"]
+  )
+  .option(
+    "-i, --include <text>",
+    "Scan only path includes text, default is all files"
   )
   .option("-v, --verbose", "Print folder hierarchy", false)
   .action(main)
