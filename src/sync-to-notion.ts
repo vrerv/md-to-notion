@@ -160,6 +160,14 @@ export async function syncToNotion(
       cursor = response.has_more ? response.next_cursor : undefined
     } while (cursor)
 
+    // you have to get children blocks if the block has children
+    for (const block of existingBlocks) {
+      if (block.has_children) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        block[block.type].children = await getExistingBlocks(notion, block.id)
+      }
+    }
     return existingBlocks
   }
 
@@ -220,13 +228,21 @@ export async function syncToNotion(
         ) {
           // to overcome the limitation of the Notion API that requires an after block to append blocks,
           // append to after first block and delete first block
-          afterId = existingBlocks[0]?.id
+          const firstBlock = existingBlocks[0]
+          afterId = firstBlock.id
           appendBlocks = blockIdSetToDelete.has(afterId)
             ? blocks
-            : [...blocks, existingBlocks[0]]
+            : [
+                ...blocks,
+                {
+                  ...firstBlock,
+                  /* to create a new block or avoid any interference with existing blocks, set id undefined */
+                  id: undefined,
+                },
+              ]
           blockIdSetToDelete.add(afterId)
         }
-        logger(LogLevel.INFO, "Appending blocks", { blocks, after })
+        logger(LogLevel.INFO, "Appending blocks", { appendBlocks, after })
         await appendBlocksInChunks(pageId, appendBlocks, afterId)
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
