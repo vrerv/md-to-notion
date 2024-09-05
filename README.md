@@ -29,6 +29,12 @@ See [Example Project](./examples/example-project) for live example
 npx @vrerv/md-to-notion --help
 ```
 
+Update all markdown files current directory to Notion page
+
+```bash
+npx @vrerv/md-to-notion -t <notion-api-secret> -p <notion-page-id> .
+```
+
 This project markdown files are also published as Notion pages by this package.
 You can see the [md-to-notion Notion Page](https://vrerv.notion.site/MD-To-Notion-e85be6990664452b8669c72d989ce258)
 
