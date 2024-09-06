@@ -115,6 +115,23 @@ describe("replaceInternalMarkdownLinks", () => {
       "This is a [special link](https://example.com/docs/special%20chars)."
     )
   })
+
+  it("handles links with replacer", () => {
+    const markdownContent =
+      "This is a image link. ![My Image](../images/my-image.png). click [here](./section)"
+    const filePathFromRoot = "src/README.md"
+    const result = replaceInternalMarkdownLinks(
+      markdownContent,
+      linkMap,
+      filePathFromRoot,
+      (text, linkPathFromRoot) => {
+        return `[${text}](https://example.com/${linkPathFromRoot})`
+      }
+    )
+    expect(result).toBe(
+      "This is a image link. ![My Image](https://example.com/images/my-image.png). click [here](https://example.com/src/section)"
+    )
+  })
 })
 
 describe("removeMarkdownLinks", () => {

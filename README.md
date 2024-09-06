@@ -13,10 +13,10 @@
 
 ## Features
 
-- [x] Upload markdown files to Notion pages with hierarchy
-- [x] Update existing pages if the file name is same. only update changed blocks.
-- [x] internal links are converted to Notion page links
-- [ ] Upload images to Notion
+- Upload markdown files to Notion pages with hierarchy
+- Update existing pages if the file name is same. only update changed blocks.
+- Replace local link to Notion page link automatically
+- Replace local link using custom replacement
 
 ## Usage
 

@@ -6,6 +6,11 @@ import { description, version } from "../package.json"
 import { Client } from "@notionhq/client"
 import { collectCurrentFiles } from "./sync-to-notion"
 
+const REPL_TEXT = "${text}"
+const REPL_LINK_PATH_FROM_ROOT = "${linkPathFromRoot}"
+const REPL_GITHUB_PATH = "${githubPath}"
+const GIT_HUB_LINK_REPLACEMENT = `[${REPL_TEXT}](https://github.com/${REPL_GITHUB_PATH}/blob/main/${REPL_LINK_PATH_FROM_ROOT}?raw=true)`
+
 const program = new Command()
 
 async function main(
@@ -16,13 +21,34 @@ async function main(
     pageId: string
     include: string
     exclude: string
+    linkReplacer: string
+    useGithubLinkReplacer: string
   }
 ) {
-  const dir = readMarkdownFiles(directory, path => {
-    const exclude = options.exclude || "node_modules"
-    const include = options.include || path
-    return path.includes(include) && !path.includes(exclude)
-  })
+  let replacer
+  if (options.linkReplacer) {
+    replacer = (text: string, linkFromRootPath: string) =>
+      options.linkReplacer
+        .replace("${text}", text)
+        .replace("${linkPathFromRoot}", linkFromRootPath)
+  } else if (options.useGithubLinkReplacer) {
+    replacer = (text: string, linkFromRootPath: string) =>
+      GIT_HUB_LINK_REPLACEMENT.replace(
+        "${githubPath}",
+        options.useGithubLinkReplacer
+      )
+        .replace("${text}", text)
+        .replace("${linkPathFromRoot}", linkFromRootPath)
+  }
+  const dir = readMarkdownFiles(
+    directory,
+    path => {
+      const exclude = options.exclude || "node_modules"
+      const include = options.include || path
+      return path.includes(include) && !path.includes(exclude)
+    },
+    replacer
+  )
 
   if (options.verbose) {
     printFolderHierarchy(dir)
@@ -54,6 +80,20 @@ program
   .option(
     "-i, --include <text>",
     "Scan only path includes text, default is all files"
+  )
+  .option(
+    "-r, --link-replacer <replacement>",
+    "Custom link replacer string.\n" +
+      `Use ${REPL_TEXT}, ${REPL_LINK_PATH_FROM_ROOT} to replace text and link.\n` +
+      "Try -g if you want to use GitHub raw link"
+  )
+  .option(
+    "-g, --use-github-link-replacer <githubPath>",
+    `Replace links with raw GitHub links.\n` +
+    `This is short version of -r '${GIT_HUB_LINK_REPLACEMENT.replace(
+      REPL_GITHUB_PATH,
+      "<githubPath>"
+    )}' option`
   )
   .option("-v, --verbose", "Print folder hierarchy", false)
   .action(main)

@@ -29,11 +29,13 @@ const logger = makeConsoleLogger("read-md")
  *
  * @param dirPath - The path to the directory containing the Markdown files.
  * @param filter - A function that determines if a path should be processed. node_modules are excluded by default.
+ * @param replacer
  * @returns A hierarchical structure of folders and files that contain Markdown files.
  */
 export function readMarkdownFiles(
   dirPath: string,
-  filter: (path: string) => boolean = path => !path.includes("node_modules")
+  filter: (path: string) => boolean = path => !path.includes("node_modules"),
+  replacer?: (text: string, linkPathFromRoot: string) => string
 ): Folder | null {
   function walk(currentPath: string): Folder | null {
     const folder: Folder = {
@@ -77,7 +79,12 @@ export function readMarkdownFiles(
           fileName: fileNameWithoutExtension,
           getContent: (linkMap: Map<string, string>) => {
             const noLinkContent = removeMarkdownLinks(
-              replaceInternalMarkdownLinks(content, linkMap, pathFromRoot)
+              replaceInternalMarkdownLinks(
+                content,
+                linkMap,
+                pathFromRoot,
+                replacer
+              )
             )
             return markdownToBlocks(noLinkContent)
           },
