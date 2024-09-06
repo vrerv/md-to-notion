@@ -9,7 +9,7 @@ import { collectCurrentFiles } from "./sync-to-notion"
 const REPL_TEXT = "${text}"
 const REPL_LINK_PATH_FROM_ROOT = "${linkPathFromRoot}"
 const REPL_GITHUB_PATH = "${githubPath}"
-const GIT_HUB_LINK_REPLACEMENT = `[${REPL_TEXT}](https://github.com/${REPL_GITHUB_PATH}/blob/main/${REPL_LINK_PATH_FROM_ROOT}?raw=true)`
+const GIT_HUB_LINK_REPLACEMENT = `[${REPL_TEXT}](https://github.com/${REPL_GITHUB_PATH}/${REPL_LINK_PATH_FROM_ROOT}?raw=true)`
 
 const program = new Command()
 
@@ -89,7 +89,8 @@ program
   )
   .option(
     "-g, --use-github-link-replacer <githubPath>",
-    `Replace links with raw GitHub links.\n` +
+    "Replace links with raw GitHub links.\n" +
+    "<githubPath> will be 'vrerv/md-to-notion/blob/main' for example.\n" +
     `This is short version of -r '${GIT_HUB_LINK_REPLACEMENT.replace(
       REPL_GITHUB_PATH,
       "<githubPath>"
