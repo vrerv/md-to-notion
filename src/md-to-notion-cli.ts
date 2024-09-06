@@ -90,11 +90,11 @@ program
   .option(
     "-g, --use-github-link-replacer <githubPath>",
     "Replace links with raw GitHub links.\n" +
-    "<githubPath> will be 'vrerv/md-to-notion/blob/main' for example.\n" +
-    `This is short version of -r '${GIT_HUB_LINK_REPLACEMENT.replace(
-      REPL_GITHUB_PATH,
-      "<githubPath>"
-    )}' option`
+      "<githubPath> will be 'vrerv/md-to-notion/blob/main' for example.\n" +
+      `This is short version of -r '${GIT_HUB_LINK_REPLACEMENT.replace(
+        REPL_GITHUB_PATH,
+        "<githubPath>"
+      )}' option`
   )
   .option("-v, --verbose", "Print folder hierarchy", false)
   .action(main)
