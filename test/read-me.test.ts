@@ -23,11 +23,7 @@ describe("readMarkdownFiles", () => {
   }
 
   function mockFile(baseName: string, fileName: string, content: string) {
-    /*
-    TODO: Fix the following error:
-    TypeError: mockedFs.readdirSync.mockReturnValue is not a function
-    After fixing the error, configure jest.config.js to run this test file.
-     */
+
     mockedFs.readdirSync.mockReturnValue([
       {
         name: fileName,

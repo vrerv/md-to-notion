@@ -2,5 +2,6 @@
 module.exports = {
   preset: "ts-jest",
   testEnvironment: "node",
-  testPathIgnorePatterns: ["read-me.test.*"],
+  testMatch: ['**/*.test.ts'],
+  testPathIgnorePatterns: [],
 }
