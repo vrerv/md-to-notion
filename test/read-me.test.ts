@@ -23,7 +23,6 @@ describe("readMarkdownFiles", () => {
   }
 
   function mockFile(baseName: string, fileName: string, content: string) {
-
     mockedFs.readdirSync.mockReturnValue([
       {
         name: fileName,
@@ -48,8 +47,15 @@ describe("readMarkdownFiles", () => {
     mockedFs.readFileSync.mockReturnValue(content)
     mockedPath.basename.mockReturnValue(baseName)
     // use actual implementations
-    mockedPath.join.mockImplementation((...args: string[]) => (jest.requireActual("path") as unknown as path.PlatformPath).join(...args))
-    mockedPath.relative.mockImplementation((mockDirPath, baseName) => (jest.requireActual("path") as unknown as path.PlatformPath).relative(mockDirPath, baseName))
+    mockedPath.join.mockImplementation((...args: string[]) =>
+      (jest.requireActual("path") as unknown as path.PlatformPath).join(...args)
+    )
+    mockedPath.relative.mockImplementation((mockDirPath, baseName) =>
+      (jest.requireActual("path") as unknown as path.PlatformPath).relative(
+        mockDirPath,
+        baseName
+      )
+    )
   }
 
   beforeEach(() => {
