@@ -46,6 +46,26 @@ function newNotionPageLink(response: PageObjectResponse): NotionPageLink {
   }
 }
 
+/**
+ * find the maximum depth of the req block
+ * @param block
+ * @param depth
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const findMaxDepth = (block: any, depth = 0): number => {
+  if (!block || !block.children) {
+    return depth;
+  }
+  let maxDepth = depth;
+
+  for (const child of block.children) {
+    const childNode = child[child.type];
+    const childDepth = findMaxDepth(childNode, depth + 1);
+    maxDepth = Math.max(maxDepth, childDepth);
+  }
+  return maxDepth;
+}
+
 export async function collectCurrentFiles(
   notion: Client,
   rootPageId: string
@@ -100,20 +120,44 @@ export async function syncToNotion(
   dir: Folder,
   linkMap: Map<string, NotionPageLink> = new Map<string, NotionPageLink>()
 ): Promise<void> {
+
   async function appendBlocksInChunks(
     pageId: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     blocks: any[],
     afterId: string | null = null
   ): Promise<void> {
+    const limitChild = findMaxDepth({ children: blocks }, 0) > 3
     // Append blocks in chunks of NOTION_BLOCK_LIMIT
     for (let i = 0; i < blocks.length; i += NOTION_BLOCK_LIMIT) {
-      const chunk = blocks.slice(i, i + NOTION_BLOCK_LIMIT)
-      await notion.blocks.children.append({
-        block_id: pageId,
-        children: chunk,
-        after: afterId ? afterId : undefined,
-      })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const children: Record<number, any[]> = {}
+      const chunk = blocks.slice(i, i + NOTION_BLOCK_LIMIT).map((block, index) => {
+        if (limitChild && block.bulleted_list_item?.children) {
+          children[index] = block.bulleted_list_item?.children
+          delete block.bulleted_list_item?.children
+        }
+        return block
+    })
+      try {
+        const response = await notion.blocks.children.append({
+          block_id: pageId,
+          children: chunk,
+          after: afterId ? afterId : undefined,
+        })
+
+        // Check for children in the chunk and append them separately
+        for (const index in children) {
+          if (children[index]) {
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            await appendBlocksInChunks(response.results[index].id, children[index])
+          }
+        }
+      } catch (error) {
+        logger(LogLevel.ERROR, "Error appending blocks", { error, chunk })
+        throw error
+      }
     }
   }
 

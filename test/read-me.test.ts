@@ -144,4 +144,109 @@ describe("readMarkdownFiles", () => {
       subfolders: [],
     })
   })
+
+  it("reads more than 3 depth of nested bullet-list", () => {
+    mockFile("file1", "file1.md", "* depth1\n  * depth2\n    * depth3\n      * depth4")
+
+    const result = readMarkdownFiles(mockDirPath)
+    const content = result?.files[0]?.getContent(
+      new Map()
+    )
+    expect(content).toEqual([
+      {
+        "bulleted_list_item": {
+          "children": [
+            {
+              "bulleted_list_item": {
+                "children": [
+                  {
+                    "bulleted_list_item": {
+                      "children": [
+                        {
+                          "bulleted_list_item": {
+                            "rich_text": [
+                              {
+                                "annotations": {
+                                  "bold": false,
+                                  "code": false,
+                                  "color": "default",
+                                  "italic": false,
+                                  "strikethrough": false,
+                                  "underline": false
+                                },
+                                "text": {
+                                  "content": "depth4"
+                                },
+                                "type": "text"
+                              }
+                            ]
+                          },
+                          "object": "block",
+                          "type": "bulleted_list_item"
+                        }
+                      ],
+                      "rich_text": [
+                        {
+                          "annotations": {
+                            "bold": false,
+                            "code": false,
+                            "color": "default",
+                            "italic": false,
+                            "strikethrough": false,
+                            "underline": false
+                          },
+                          "text": {
+                            "content": "depth3"
+                          },
+                          "type": "text"
+                        }
+                      ]
+                    },
+                    "object": "block",
+                    "type": "bulleted_list_item"
+                  }
+                ],
+                "rich_text": [
+                  {
+                    "annotations": {
+                      "bold": false,
+                      "code": false,
+                      "color": "default",
+                      "italic": false,
+                      "strikethrough": false,
+                      "underline": false
+                    },
+                    "text": {
+                      "content": "depth2"
+                    },
+                    "type": "text"
+                  }
+                ]
+              },
+              "object": "block",
+              "type": "bulleted_list_item"
+            }
+          ],
+          "rich_text": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "text": {
+                "content": "depth1"
+              },
+              "type": "text"
+            }
+          ]
+        },
+        "object": "block",
+        "type": "bulleted_list_item"
+      }
+    ])
+  })
 })

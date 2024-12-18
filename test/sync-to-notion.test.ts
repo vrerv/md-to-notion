@@ -1,6 +1,129 @@
-import { NotionPageLink, syncToNotion } from "../src/sync-to-notion"
+import { findMaxDepth, NotionPageLink, syncToNotion } from "../src/sync-to-notion"
 import { Client } from "@notionhq/client"
 import { Folder } from "../src/read-md"
+
+
+describe("findMaxDepth", () => {
+  it("finds the maximum depth of a block", () => {
+    const block = {
+      children: [
+        {
+          type: "bulleted_list_item",
+          "bulleted_list_item": {
+            children: [
+              {
+                type: "bulleted_list_item",
+                "bulleted_list_item": {
+                  children: [
+                    {
+                      type: "bulleted_list_item",
+                      "bulleted_list_item": {
+                        children: [
+                          {
+                            type: "bulleted_list_item",
+                            "bulleted_list_item": {
+                              rich_text: [
+                                {
+                                  text: {
+                                    content: "depth4",
+                                  },
+                                },
+                              ],
+                            },
+                          },
+                        ],
+                        rich_text: [
+                          {
+                            text: {
+                              content: "depth3",
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                  rich_text: [
+                    {
+                      text: {
+                        content: "depth2",
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      ],
+    }
+    expect(findMaxDepth(block)).toBe(4)
+  })
+
+  it("returns 0 for a block without children", () => {
+    const block = {}
+    expect(findMaxDepth(block)).toBe(0)
+  })
+
+  it("returns 3 for more blocks", () => {
+    const block = {
+      children: [
+        {
+          type: "bulleted_list_item",
+          "bulleted_list_item": {
+            children: [
+              {
+                type: "bulleted_list_item",
+                "bulleted_list_item": {
+                  children: [
+                    {
+                      type: "bulleted_list_item",
+                      "bulleted_list_item": {
+                        rich_text: [
+                          {
+                            text: {
+                              content: "depth3",
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                  rich_text: [
+                    {
+                      text: {
+                        content: "depth2",
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+        {
+          type: "bulleted_list_item",
+          "bulleted_list_item": {
+            children: [
+              {
+                type: "bulleted_list_item",
+                "bulleted_list_item": {
+                  "rich_text": [
+                    {
+                      "text": {
+                        "content": "depth2"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ],
+    }
+    expect(findMaxDepth(block)).toBe(3)
+  })
+})
 
 describe("syncToNotion", () => {
   const mockNotionClient = new Client({ auth: "test-token" })
@@ -50,10 +173,17 @@ describe("syncToNotion", () => {
     .fn()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .mockImplementation(async (req: any) => {
+
+      const maxDepth = findMaxDepth(req, 0)
+      if (maxDepth > 3) {
+        throw new Error("Depth of the block is more than 3. maxDepth: " + maxDepth)
+      }
+
       return {
         object: "block",
         id: req.id,
         url: "https://vrerv.com/" + req.id,
+        results: req.children.map((_: any, index: number) => { return { id: 'child-' + index } }),
       }
     })
   mockNotionClient.blocks.delete = jest.fn().mockImplementation(async () => {
@@ -116,6 +246,121 @@ describe("syncToNotion", () => {
         {
           fileName: "test-file",
           getContent: _ => [],
+        },
+      ],
+      subfolders: [],
+    }
+
+    await syncToNotion(mockNotionClient, pageId, folder, linkMap)
+
+    expect(linkMap.size).toBe(1)
+    expect(linkMap.get(`./test-file`)?.id).toBe("test-file")
+  })
+
+  it("creates a new page for a markdown file with contents", async () => {
+    const pageId = "test-page-id"
+    const linkMap = new Map<string, NotionPageLink>()
+    const folder: Folder = {
+      name: "root",
+      files: [
+        {
+          fileName: "test-file",
+          getContent: _ => [
+            {
+              "bulleted_list_item": {
+                "children": [
+                  {
+                    "bulleted_list_item": {
+                      "children": [
+                        {
+                          "bulleted_list_item": {
+                            "children": [
+                              {
+                                "bulleted_list_item": {
+                                  "rich_text": [
+                                    {
+                                      "annotations": {
+                                        "bold": false,
+                                        "code": false,
+                                        "color": "default",
+                                        "italic": false,
+                                        "strikethrough": false,
+                                        "underline": false
+                                      },
+                                      "text": {
+                                        "content": "depth4"
+                                      },
+                                      "type": "text"
+                                    }
+                                  ]
+                                },
+                                "object": "block",
+                                "type": "bulleted_list_item"
+                              }
+                            ],
+                            "rich_text": [
+                              {
+                                "annotations": {
+                                  "bold": false,
+                                  "code": false,
+                                  "color": "default",
+                                  "italic": false,
+                                  "strikethrough": false,
+                                  "underline": false
+                                },
+                                "text": {
+                                  "content": "depth3"
+                                },
+                                "type": "text"
+                              }
+                            ]
+                          },
+                          "object": "block",
+                          "type": "bulleted_list_item"
+                        }
+                      ],
+                      "rich_text": [
+                        {
+                          "annotations": {
+                            "bold": false,
+                            "code": false,
+                            "color": "default",
+                            "italic": false,
+                            "strikethrough": false,
+                            "underline": false
+                          },
+                          "text": {
+                            "content": "depth2"
+                          },
+                          "type": "text"
+                        }
+                      ]
+                    },
+                    "object": "block",
+                    "type": "bulleted_list_item"
+                  }
+                ],
+                "rich_text": [
+                  {
+                    "annotations": {
+                      "bold": false,
+                      "code": false,
+                      "color": "default",
+                      "italic": false,
+                      "strikethrough": false,
+                      "underline": false
+                    },
+                    "text": {
+                      "content": "depth1"
+                    },
+                    "type": "text"
+                  }
+                ]
+              },
+              "object": "block",
+              "type": "bulleted_list_item"
+            }
+          ],
         },
       ],
       subfolders: [],
