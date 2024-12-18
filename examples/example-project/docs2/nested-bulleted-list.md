@@ -1,6 +1,4 @@
-
-
-* depth1
-    * depth2
-        * depth3
-            * depth4
+- depth1
+  - depth2
+    - depth3
+      - depth4

@@ -54,16 +54,16 @@ function newNotionPageLink(response: PageObjectResponse): NotionPageLink {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const findMaxDepth = (block: any, depth = 0): number => {
   if (!block || !block.children) {
-    return depth;
+    return depth
   }
-  let maxDepth = depth;
+  let maxDepth = depth
 
   for (const child of block.children) {
-    const childNode = child[child.type];
-    const childDepth = findMaxDepth(childNode, depth + 1);
-    maxDepth = Math.max(maxDepth, childDepth);
+    const childNode = child[child.type]
+    const childDepth = findMaxDepth(childNode, depth + 1)
+    maxDepth = Math.max(maxDepth, childDepth)
   }
-  return maxDepth;
+  return maxDepth
 }
 
 export async function collectCurrentFiles(
@@ -120,7 +120,6 @@ export async function syncToNotion(
   dir: Folder,
   linkMap: Map<string, NotionPageLink> = new Map<string, NotionPageLink>()
 ): Promise<void> {
-
   async function appendBlocksInChunks(
     pageId: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -132,13 +131,15 @@ export async function syncToNotion(
     for (let i = 0; i < blocks.length; i += NOTION_BLOCK_LIMIT) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const children: Record<number, any[]> = {}
-      const chunk = blocks.slice(i, i + NOTION_BLOCK_LIMIT).map((block, index) => {
-        if (limitChild && block.bulleted_list_item?.children) {
-          children[index] = block.bulleted_list_item?.children
-          delete block.bulleted_list_item?.children
-        }
-        return block
-    })
+      const chunk = blocks
+        .slice(i, i + NOTION_BLOCK_LIMIT)
+        .map((block, index) => {
+          if (limitChild && block.bulleted_list_item?.children) {
+            children[index] = block.bulleted_list_item?.children
+            delete block.bulleted_list_item?.children
+          }
+          return block
+        })
       try {
         const response = await notion.blocks.children.append({
           block_id: pageId,
@@ -149,9 +150,14 @@ export async function syncToNotion(
         // Check for children in the chunk and append them separately
         for (const index in children) {
           if (children[index]) {
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            await appendBlocksInChunks(response.results[index].id, children[index])
+            await appendBlocksInChunks(
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore
+              response.results[index].id,
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore
+              children[index]
+            )
           }
         }
       } catch (error) {

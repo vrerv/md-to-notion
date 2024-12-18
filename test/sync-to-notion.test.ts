@@ -1,7 +1,10 @@
-import { findMaxDepth, NotionPageLink, syncToNotion } from "../src/sync-to-notion"
+import {
+  findMaxDepth,
+  NotionPageLink,
+  syncToNotion,
+} from "../src/sync-to-notion"
 import { Client } from "@notionhq/client"
 import { Folder } from "../src/read-md"
-
 
 describe("findMaxDepth", () => {
   it("finds the maximum depth of a block", () => {
@@ -9,19 +12,19 @@ describe("findMaxDepth", () => {
       children: [
         {
           type: "bulleted_list_item",
-          "bulleted_list_item": {
+          bulleted_list_item: {
             children: [
               {
                 type: "bulleted_list_item",
-                "bulleted_list_item": {
+                bulleted_list_item: {
                   children: [
                     {
                       type: "bulleted_list_item",
-                      "bulleted_list_item": {
+                      bulleted_list_item: {
                         children: [
                           {
                             type: "bulleted_list_item",
-                            "bulleted_list_item": {
+                            bulleted_list_item: {
                               rich_text: [
                                 {
                                   text: {
@@ -69,15 +72,15 @@ describe("findMaxDepth", () => {
       children: [
         {
           type: "bulleted_list_item",
-          "bulleted_list_item": {
+          bulleted_list_item: {
             children: [
               {
                 type: "bulleted_list_item",
-                "bulleted_list_item": {
+                bulleted_list_item: {
                   children: [
                     {
                       type: "bulleted_list_item",
-                      "bulleted_list_item": {
+                      bulleted_list_item: {
                         rich_text: [
                           {
                             text: {
@@ -102,23 +105,23 @@ describe("findMaxDepth", () => {
         },
         {
           type: "bulleted_list_item",
-          "bulleted_list_item": {
+          bulleted_list_item: {
             children: [
               {
                 type: "bulleted_list_item",
-                "bulleted_list_item": {
-                  "rich_text": [
+                bulleted_list_item: {
+                  rich_text: [
                     {
-                      "text": {
-                        "content": "depth2"
-                      }
-                    }
-                  ]
-                }
-              }
-            ]
-          }
-        }
+                      text: {
+                        content: "depth2",
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
       ],
     }
     expect(findMaxDepth(block)).toBe(3)
@@ -173,17 +176,20 @@ describe("syncToNotion", () => {
     .fn()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .mockImplementation(async (req: any) => {
-
       const maxDepth = findMaxDepth(req, 0)
       if (maxDepth > 3) {
-        throw new Error("Depth of the block is more than 3. maxDepth: " + maxDepth)
+        throw new Error(
+          "Depth of the block is more than 3. maxDepth: " + maxDepth
+        )
       }
 
       return {
         object: "block",
         id: req.id,
         url: "https://vrerv.com/" + req.id,
-        results: req.children.map((_: any, index: number) => { return { id: 'child-' + index } }),
+        results: req.children.map((_: any, index: number) => {
+          return { id: "child-" + index }
+        }),
       }
     })
   mockNotionClient.blocks.delete = jest.fn().mockImplementation(async () => {
@@ -267,99 +273,99 @@ describe("syncToNotion", () => {
           fileName: "test-file",
           getContent: _ => [
             {
-              "bulleted_list_item": {
-                "children": [
+              bulleted_list_item: {
+                children: [
                   {
-                    "bulleted_list_item": {
-                      "children": [
+                    bulleted_list_item: {
+                      children: [
                         {
-                          "bulleted_list_item": {
-                            "children": [
+                          bulleted_list_item: {
+                            children: [
                               {
-                                "bulleted_list_item": {
-                                  "rich_text": [
+                                bulleted_list_item: {
+                                  rich_text: [
                                     {
-                                      "annotations": {
-                                        "bold": false,
-                                        "code": false,
-                                        "color": "default",
-                                        "italic": false,
-                                        "strikethrough": false,
-                                        "underline": false
+                                      annotations: {
+                                        bold: false,
+                                        code: false,
+                                        color: "default",
+                                        italic: false,
+                                        strikethrough: false,
+                                        underline: false,
                                       },
-                                      "text": {
-                                        "content": "depth4"
+                                      text: {
+                                        content: "depth4",
                                       },
-                                      "type": "text"
-                                    }
-                                  ]
+                                      type: "text",
+                                    },
+                                  ],
                                 },
-                                "object": "block",
-                                "type": "bulleted_list_item"
-                              }
+                                object: "block",
+                                type: "bulleted_list_item",
+                              },
                             ],
-                            "rich_text": [
+                            rich_text: [
                               {
-                                "annotations": {
-                                  "bold": false,
-                                  "code": false,
-                                  "color": "default",
-                                  "italic": false,
-                                  "strikethrough": false,
-                                  "underline": false
+                                annotations: {
+                                  bold: false,
+                                  code: false,
+                                  color: "default",
+                                  italic: false,
+                                  strikethrough: false,
+                                  underline: false,
                                 },
-                                "text": {
-                                  "content": "depth3"
+                                text: {
+                                  content: "depth3",
                                 },
-                                "type": "text"
-                              }
-                            ]
+                                type: "text",
+                              },
+                            ],
                           },
-                          "object": "block",
-                          "type": "bulleted_list_item"
-                        }
+                          object: "block",
+                          type: "bulleted_list_item",
+                        },
                       ],
-                      "rich_text": [
+                      rich_text: [
                         {
-                          "annotations": {
-                            "bold": false,
-                            "code": false,
-                            "color": "default",
-                            "italic": false,
-                            "strikethrough": false,
-                            "underline": false
+                          annotations: {
+                            bold: false,
+                            code: false,
+                            color: "default",
+                            italic: false,
+                            strikethrough: false,
+                            underline: false,
                           },
-                          "text": {
-                            "content": "depth2"
+                          text: {
+                            content: "depth2",
                           },
-                          "type": "text"
-                        }
-                      ]
+                          type: "text",
+                        },
+                      ],
                     },
-                    "object": "block",
-                    "type": "bulleted_list_item"
-                  }
+                    object: "block",
+                    type: "bulleted_list_item",
+                  },
                 ],
-                "rich_text": [
+                rich_text: [
                   {
-                    "annotations": {
-                      "bold": false,
-                      "code": false,
-                      "color": "default",
-                      "italic": false,
-                      "strikethrough": false,
-                      "underline": false
+                    annotations: {
+                      bold: false,
+                      code: false,
+                      color: "default",
+                      italic: false,
+                      strikethrough: false,
+                      underline: false,
                     },
-                    "text": {
-                      "content": "depth1"
+                    text: {
+                      content: "depth1",
                     },
-                    "type": "text"
-                  }
-                ]
+                    type: "text",
+                  },
+                ],
               },
-              "object": "block",
-              "type": "bulleted_list_item"
-            }
+              object: "block",
+              type: "bulleted_list_item",
+            },
           ],
         },
       ],
