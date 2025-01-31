@@ -36,9 +36,19 @@ function commonPageKey(parentId: string, title: string): string {
 function getPageTitle(pageResponse: GetPageResponse): string {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
-  const titles = pageResponse.properties.title.title
-  if (titles && titles.length > 0) {
-    return titles[0].plain_text
+  const properties = pageResponse.properties
+  if (
+    properties &&
+    properties.title &&
+    properties.title.title &&
+    properties.title.title.length > 0
+  ) {
+    const title =
+      properties.title.title[0]?.plain_text ||
+      properties.title.title[0]?.text?.content
+    if (title) {
+      return title
+    }
   }
   logger(LogLevel.ERROR, "Error no title found", { pageResponse })
   throw new Error(

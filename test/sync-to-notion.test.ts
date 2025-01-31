@@ -432,22 +432,19 @@ describe("syncToNotion", () => {
 describe("collectCurrentFiles", () => {
   const mockNotionClient = new Client({ auth: "test-token" })
   //mock call to Notion API and return no title page response
-  mockNotionClient.pages.retrieve = jest.fn().mockImplementation(async () => {
-    return {
-      object: "page",
-      id: "page-1",
-      url: "https://vrerv.com/page-1",
-      properties: {
-        title: {
-          title: [],
-        },
-      },
-    }
-  })
+  const setPageResponse = (properties: unknown) => {
+    mockNotionClient.pages.retrieve = jest.fn().mockImplementation(async () => {
+      return {
+        object: "page",
+        id: "page-1",
+        url: "https://vrerv.com/page-1",
+        properties: properties,
+      }
+    })
+  }
 
-  it("should throw error if there's no page title page", async () => {
+  const assertNoPageTitleError = async () => {
     const pageId = "test-page-id"
-
     try {
       await collectCurrentFiles(mockNotionClient, pageId)
       fail("Should throw error if there's no page title page")
@@ -460,5 +457,28 @@ describe("collectCurrentFiles", () => {
         fail("Should throw error if there's no page title page")
       }
     }
+  }
+
+  it("should throw error if there's no page title page", async () => {
+    setPageResponse({
+      title: {
+        title: {},
+      },
+    })
+    await assertNoPageTitleError()
+    setPageResponse({
+      title: {
+        title: [],
+      },
+    })
+    await assertNoPageTitleError()
+
+    setPageResponse({
+      title: {},
+    })
+    await assertNoPageTitleError()
+
+    setPageResponse({})
+    await assertNoPageTitleError()
   })
 })
