@@ -36,7 +36,16 @@ function commonPageKey(parentId: string, title: string): string {
 function getPageTitle(pageResponse: GetPageResponse): string {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
-  return pageResponse.properties.title.title[0].text.content
+  const titles = pageResponse.properties.title.title
+  if (titles && titles.length > 0) {
+    return titles[0].plain_text
+  }
+  logger(LogLevel.ERROR, "Error no title found", { pageResponse })
+  throw new Error(
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    `No title found. Please set a title for the page ${pageResponse.url} and try again.`
+  )
 }
 
 function newNotionPageLink(response: PageObjectResponse): NotionPageLink {

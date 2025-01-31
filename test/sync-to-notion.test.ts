@@ -1,4 +1,5 @@
 import {
+  collectCurrentFiles,
   findMaxDepth,
   NotionPageLink,
   syncToNotion,
@@ -425,5 +426,39 @@ describe("syncToNotion", () => {
     expect(linkMap.size).toBe(2)
     expect(linkMap.get(`./subfolder`)?.id).toBe("subfolder")
     expect(linkMap.get(`./subfolder/subfile`)?.id).toBe("subfile")
+  })
+})
+
+describe("collectCurrentFiles", () => {
+  const mockNotionClient = new Client({ auth: "test-token" })
+  //mock call to Notion API and return no title page response
+  mockNotionClient.pages.retrieve = jest.fn().mockImplementation(async () => {
+    return {
+      object: "page",
+      id: "page-1",
+      url: "https://vrerv.com/page-1",
+      properties: {
+        title: {
+          title: [],
+        },
+      },
+    }
+  })
+
+  it("should throw error if there's no page title page", async () => {
+    const pageId = "test-page-id"
+
+    try {
+      await collectCurrentFiles(mockNotionClient, pageId)
+      fail("Should throw error if there's no page title page")
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        expect(e.message).toBe(
+          "No title found. Please set a title for the page https://vrerv.com/page-1 and try again."
+        )
+      } else {
+        fail("Should throw error if there's no page title page")
+      }
+    }
   })
 })
