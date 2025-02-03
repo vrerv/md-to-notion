@@ -34,17 +34,16 @@ function commonPageKey(parentId: string, title: string): string {
 }
 
 function getPageTitle(pageResponse: GetPageResponse): string {
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  const properties: TitlePropertyItemObjectResponse = Object.values(pageResponse.properties).find((property: TitleProperty) => property.type === "title")
-  if (
-    properties &&
-    properties.title &&
-    properties.title.length > 0
-  ) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const properties: any = Object.values(
+    (pageResponse as PageObjectResponse).properties || {}
+  )
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    .find((prop: unknown) => prop.type === "title")
+  if (properties && properties.title && properties.title.length > 0) {
     const title =
-      properties.title[0]?.plain_text ||
-      properties.title[0]?.text?.content
+      properties.title[0]?.plain_text || properties.title[0]?.text?.content
     if (title) {
       return title
     }
