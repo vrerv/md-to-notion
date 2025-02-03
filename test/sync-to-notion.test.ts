@@ -441,6 +441,11 @@ describe("collectCurrentFiles", () => {
         properties: properties,
       }
     })
+    mockNotionClient.blocks.children.list = jest.fn().mockImplementation(async () => {
+      return {
+        results: [],
+      }
+    })
   }
 
   const assertNoPageTitleError = async () => {
@@ -480,5 +485,22 @@ describe("collectCurrentFiles", () => {
 
     setPageResponse({})
     await assertNoPageTitleError()
+  })
+
+  it("should find page title if type == title in the pageResponse.properties", async () => {
+    setPageResponse({
+      Page: {
+        type: "title",
+        title: [
+          {
+            text: {
+              content: "test-title",
+            },
+          },
+        ],
+      },
+    })
+    const linkMap = await collectCurrentFiles(mockNotionClient, "test-page-id")
+    expect(linkMap.get("./test-title")).toEqual({"id": "page-1", "link": "https://vrerv.com/page-1"})
   })
 })
