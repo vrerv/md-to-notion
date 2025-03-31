@@ -9,7 +9,7 @@
 ![My Integrations](https://github.com/vrerv/md-to-notion/blob/main/docs/notion-my-integrations.png?raw=true)
 
 API 사용을 위한 새로운 내부 통합을 생성하고 API 호출을 위한 시크릿을 얻으세요.
-API 시크릿을 얻었으면, 그값을 환경 분서 `NOTION_API_TOKEN` 으로 설정하여 `md-to-notion`을 사용할 수 있습니다.
+API 시크릿을 얻었으면, 그값을 환경변수 `NOTION_API_TOKEN` 으로 설정하여 `md-to-notion`을 사용할 수 있습니다.
 
 bash 나 zsh 를 사용하면 아래와 같이 환경변수를 설정할 수 있습니다.
 
