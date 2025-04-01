@@ -23,6 +23,7 @@ async function main(
     exclude: string
     linkReplacer: string
     useGithubLinkReplacer: string
+    delete: boolean
   }
 ) {
   let replacer
@@ -57,7 +58,7 @@ async function main(
   if (dir) {
     const notion = new Client({ auth: options.token })
     const linkMap = await collectCurrentFiles(notion, options.pageId)
-    await syncToNotion(notion, options.pageId, dir, linkMap)
+    await syncToNotion(notion, options.pageId, dir, linkMap, options.delete)
   }
 
   console.log("Sync complete!")
@@ -97,6 +98,11 @@ program
       )}' option`
   )
   .option("-v, --verbose", "Print folder hierarchy", false)
+  .option(
+    "-d, --delete",
+    "Delete pages in Notion that don't exist locally",
+    false
+  )
   .action(main)
 
 program.parse(process.argv)
