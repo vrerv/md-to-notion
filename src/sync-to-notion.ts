@@ -363,9 +363,10 @@ export async function syncToNotion(
     // Track pages that we've archived in this run
     const archivedPages = new Set<string>()
 
-    // Sort keys by path length so that we delete deeper paths first
+    // Sort keys by path length so that we delete parent paths first
+    // This reduces API calls because archiving a parent will archive all children
     const sortedEntries = Array.from(linkMap.entries()).sort(
-      (a, b) => b[0].length - a[0].length
+      (a, b) => a[0].length - b[0].length
     )
 
     for (const [key, pageLink] of sortedEntries) {
