@@ -240,12 +240,13 @@ export async function syncToNotion(
     return existingBlocks
   }
 
-  async function syncFolderAndTrackParents(
+  async function syncFolder(
     folder: Folder,
     parentId: string,
     parentName: string,
     createFolder = true,
-    pages: Array<{ pageId: string; file: MarkdownFileData }>
+    pages: Array<{ pageId: string; file: MarkdownFileData }>,
+    folderPageIds: Set<string>
   ): Promise<void> {
     let folderPageId = parentId
     if (createFolder) {
@@ -276,12 +277,13 @@ export async function syncToNotion(
     }
 
     for (const subfolder of folder.subfolders) {
-      await syncFolderAndTrackParents(
+      await syncFolder(
         subfolder,
         folderPageId,
         childParentName,
         true,
-        pages
+        pages,
+        folderPageIds
       )
     }
   }
@@ -334,7 +336,7 @@ export async function syncToNotion(
 
   const pages = [] as Array<{ pageId: string; file: MarkdownFileData }>
   const folderPageIds = new Set<string>()
-  await syncFolderAndTrackParents(dir, pageId, ".", false, pages)
+  await syncFolder(dir, pageId, ".", false, pages, folderPageIds)
 
   const linkUrlMap = new Map<string, string>(
     Array.from(linkMap.entries()).map(([key, value]) => [key, value.link])
