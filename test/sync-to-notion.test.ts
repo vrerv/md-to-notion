@@ -478,6 +478,20 @@ describe("syncToNotion", () => {
         },
       ],
       [
+        `./folder-non-exists/non-exists-sub2`,
+        {
+          id: "non-exists-sub2-id",
+          link: "https://notion.so/folder-non-exists/non-exists-sub2",
+        },
+      ],
+      [
+        `./folder-non-exists/non-exists-sub2/non-exists-file2`,
+        {
+          id: "non-exists-file2-id",
+          link: "https://notion.so/folder-non-exists/non-exists-sub2/non-exists-file2",
+        },
+      ],
+      [
         `./folder-non-exists/non-existent-subfile2`,
         {
           id: "non-existent-subfile2-id",
@@ -516,6 +530,8 @@ describe("syncToNotion", () => {
     expect(archivedPages).not.toContain("existing-file-id")
     expect(archivedPages).not.toContain("subfolder-id")
     expect(archivedPages).not.toContain("non-existent-subfile2-id")
+    expect(archivedPages).not.toContain("non-exists-sub2-id")
+    expect(archivedPages).not.toContain("non-exists-file2-id")
     expect(archivedPages).not.toContain(pageId)
 
     // Verify update was called the right number of times
