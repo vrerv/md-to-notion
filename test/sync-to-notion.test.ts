@@ -188,7 +188,7 @@ describe("syncToNotion", () => {
         object: "block",
         id: req.id,
         url: "https://vrerv.com/" + req.id,
-        results: req.children.map((_: any, index: number) => {
+        results: req.children.map((_: unknown, index: number) => {
           return { id: "child-" + index }
         }),
       }
