@@ -188,7 +188,7 @@ describe("syncToNotion", () => {
         object: "block",
         id: req.id,
         url: "https://vrerv.com/" + req.id,
-        results: req.children.map((_: any, index: number) => {
+        results: req.children.map((_: unknown, index: number) => {
           return { id: "child-" + index }
         }),
       }
@@ -426,6 +426,116 @@ describe("syncToNotion", () => {
     expect(linkMap.size).toBe(2)
     expect(linkMap.get(`./subfolder`)?.id).toBe("subfolder")
     expect(linkMap.get(`./subfolder/subfile`)?.id).toBe("subfile")
+  })
+
+  it("archives pages that don't exist locally when deleteNonExistentFiles is true", async () => {
+    const pageId = "test-page-id"
+
+    // Track pages that get archived
+    const archivedPages: string[] = []
+
+    // Mock the Notion client's update method
+    mockNotionClient.pages.update = jest
+      .fn()
+      .mockImplementation(
+        async (params: { page_id: string; archived: boolean }) => {
+          if (params.archived) {
+            archivedPages.push(params.page_id)
+          }
+          return { id: params.page_id }
+        }
+      )
+
+    // Create a linkMap with pages that don't exist locally
+    const linkMap = new Map<string, NotionPageLink>([
+      [
+        `./existing-file`,
+        { id: "existing-file-id", link: "https://notion.so/existing-file" },
+      ],
+      [
+        `./non-existent-file`,
+        {
+          id: "non-existent-file-id",
+          link: "https://notion.so/non-existent-file",
+        },
+      ],
+      [
+        `./subfolder`,
+        { id: "subfolder-id", link: "https://notion.so/subfolder" },
+      ],
+      [
+        `./subfolder/non-existent-subfile`,
+        {
+          id: "non-existent-subfile-id",
+          link: "https://notion.so/non-existent-subfile",
+        },
+      ],
+      [
+        `./folder-non-exists`,
+        {
+          id: "folder-non-exists-id",
+          link: "https://notion.so/folder-non-exists",
+        },
+      ],
+      [
+        `./folder-non-exists/non-exists-sub2`,
+        {
+          id: "non-exists-sub2-id",
+          link: "https://notion.so/folder-non-exists/non-exists-sub2",
+        },
+      ],
+      [
+        `./folder-non-exists/non-exists-sub2/non-exists-file2`,
+        {
+          id: "non-exists-file2-id",
+          link: "https://notion.so/folder-non-exists/non-exists-sub2/non-exists-file2",
+        },
+      ],
+      [
+        `./folder-non-exists/non-existent-subfile2`,
+        {
+          id: "non-existent-subfile2-id",
+          link: "https://notion.so/folder-non-exists/non-existent-subfile2",
+        },
+      ],
+    ])
+
+    // Create a folder structure that only has some of the files in the linkMap
+    const folder: Folder = {
+      name: ".",
+      files: [
+        {
+          fileName: "existing-file",
+          getContent: _ => [],
+        },
+      ],
+      subfolders: [
+        {
+          name: "subfolder",
+          files: [],
+          subfolders: [],
+        },
+      ],
+    }
+
+    // Run syncToNotion with deleteNonExistentFiles set to true
+    await syncToNotion(mockNotionClient, pageId, folder, linkMap, true)
+
+    // Verify that non-existent files were archived
+    expect(archivedPages).toContain("non-existent-file-id")
+    expect(archivedPages).toContain("non-existent-subfile-id")
+    expect(archivedPages).toContain("folder-non-exists-id")
+
+    // Verify that existing files and folders were not archived
+    expect(archivedPages).not.toContain("existing-file-id")
+    expect(archivedPages).not.toContain("subfolder-id")
+    expect(archivedPages).not.toContain("non-existent-subfile2-id")
+    expect(archivedPages).not.toContain("non-exists-sub2-id")
+    expect(archivedPages).not.toContain("non-exists-file2-id")
+    expect(archivedPages).not.toContain(pageId)
+
+    // Verify update was called the right number of times
+    expect(mockNotionClient.pages.update).toHaveBeenCalledTimes(3)
   })
 })
 

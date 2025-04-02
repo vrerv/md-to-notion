@@ -17,6 +17,7 @@
 - Update existing pages if the file name is same. only update changed blocks.
 - Replace local link to Notion page link automatically
 - Replace local link using custom replacement
+- Delete(archive) notion pages that does not exist(deleted files) in local (not to delete by default)
 
 ## Usage
 

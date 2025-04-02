@@ -129,13 +129,15 @@ export async function collectCurrentFiles(
  * @param pageId - The ID of the Notion page to sync the content to.
  * @param dir - The folder structure to sync.
  * @param linkMap
+ * @param deleteNonExistentFiles - Whether to delete pages in Notion that don't exist locally
  * @returns A promise that resolves when the synchronization is complete.
  */
 export async function syncToNotion(
   notion: Client,
   pageId: string,
   dir: Folder,
-  linkMap: Map<string, NotionPageLink> = new Map<string, NotionPageLink>()
+  linkMap: Map<string, NotionPageLink> = new Map<string, NotionPageLink>(),
+  deleteNonExistentFiles = false
 ): Promise<void> {
   async function appendBlocksInChunks(
     pageId: string,
@@ -243,7 +245,8 @@ export async function syncToNotion(
     parentId: string,
     parentName: string,
     createFolder = true,
-    pages: Array<{ pageId: string; file: MarkdownFileData }>
+    pages: Array<{ pageId: string; file: MarkdownFileData }>,
+    folderPageIds: Set<string>
   ): Promise<void> {
     let folderPageId = parentId
     if (createFolder) {
@@ -256,6 +259,7 @@ export async function syncToNotion(
         }
       )
     }
+    folderPageIds.add(folderPageId)
 
     const childParentName =
       dir.name === folder.name ? parentName : parentName + "/" + folder.name
@@ -273,7 +277,14 @@ export async function syncToNotion(
     }
 
     for (const subfolder of folder.subfolders) {
-      await syncFolder(subfolder, folderPageId, childParentName, true, pages)
+      await syncFolder(
+        subfolder,
+        folderPageId,
+        childParentName,
+        true,
+        pages,
+        folderPageIds
+      )
     }
   }
 
@@ -324,7 +335,8 @@ export async function syncToNotion(
   }
 
   const pages = [] as Array<{ pageId: string; file: MarkdownFileData }>
-  await syncFolder(dir, pageId, ".", false, pages)
+  const folderPageIds = new Set<string>()
+  await syncFolder(dir, pageId, ".", false, pages, folderPageIds)
 
   const linkUrlMap = new Map<string, string>(
     Array.from(linkMap.entries()).map(([key, value]) => [key, value.link])
@@ -338,5 +350,78 @@ export async function syncToNotion(
       newBlockSize: blocks.length,
     })
     await updateBlocks(page.pageId, blocks)
+  }
+
+  // Track which pages from Notion were found in the local directory
+  // Include both file pages and their parent folder pages
+  const processedNotionPageIds = new Set<string>([
+    ...pages.map(page => page.pageId),
+    ...folderPageIds,
+  ])
+
+  if (deleteNonExistentFiles) {
+    // Track pages that we've archived in this run
+    const archivedPages = new Set<string>()
+
+    // Sort keys by path length so that we delete parent paths first
+    // This reduces API calls because archiving a parent will archive all children
+    const sortedEntries = Array.from(linkMap.entries()).sort(
+      (a, b) => a[0].length - b[0].length
+    )
+
+    for (const [key, pageLink] of sortedEntries) {
+      const isRootPage =
+        pageLink.id.replace(/-/g, "") === pageId.replace(/-/g, "")
+      if (isRootPage) {
+        continue
+      }
+      if (processedNotionPageIds.has(pageLink.id)) {
+        continue
+      }
+
+      // Check if any ancestor path has been archived
+      // For a path like "./1/2/3/file", check if "./1", "./1/2", or "./1/2/3" is archived
+      let hasArchivedAncestor = false
+      const pathParts = key.split("/")
+
+      // Build paths from root to the current path and check each
+      if (pathParts.length > 1) {
+        for (let i = 1; i < pathParts.length; i++) {
+          const ancestorPath = pathParts.slice(0, i).join("/")
+          if (archivedPages.has(ancestorPath)) {
+            logger(
+              LogLevel.INFO,
+              `Skipping page with archived ancestor: ${key}`,
+              {
+                ancestorPath,
+                pageId: pageLink.id,
+              }
+            )
+            hasArchivedAncestor = true
+            break
+          }
+        }
+      }
+
+      if (hasArchivedAncestor) {
+        continue
+      }
+
+      try {
+        logger(LogLevel.INFO, `Deleting page: ${key}`)
+        await notion.pages.update({
+          page_id: pageLink.id,
+          archived: true,
+        })
+
+        archivedPages.add(key)
+      } catch (error) {
+        logger(LogLevel.ERROR, `Error deleting page: ${key}`, {
+          error,
+          pageId: pageLink.id,
+        })
+        throw error
+      }
+    }
   }
 }
