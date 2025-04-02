@@ -378,8 +378,32 @@ export async function syncToNotion(
       if (processedNotionPageIds.has(pageLink.id)) {
         continue
       }
-      const parentPath = key.substring(0, key.lastIndexOf("/"))
-      if (parentPath && archivedPages.has(parentPath)) {
+
+      // Check if any ancestor path has been archived
+      // For a path like "./1/2/3/file", check if "./1", "./1/2", or "./1/2/3" is archived
+      let hasArchivedAncestor = false
+      const pathParts = key.split("/")
+
+      // Build paths from root to the current path and check each
+      if (pathParts.length > 1) {
+        for (let i = 1; i < pathParts.length; i++) {
+          const ancestorPath = pathParts.slice(0, i).join("/")
+          if (archivedPages.has(ancestorPath)) {
+            logger(
+              LogLevel.INFO,
+              `Skipping page with archived ancestor: ${key}`,
+              {
+                ancestorPath,
+                pageId: pageLink.id,
+              }
+            )
+            hasArchivedAncestor = true
+            break
+          }
+        }
+      }
+
+      if (hasArchivedAncestor) {
         continue
       }
 
