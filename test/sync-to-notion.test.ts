@@ -472,7 +472,10 @@ describe("syncToNotion", () => {
       ],
       [
         `./folder-non-exists`,
-        { id: "folder-non-exists-id", link: "https://notion.so/folder-non-exists" },
+        {
+          id: "folder-non-exists-id",
+          link: "https://notion.so/folder-non-exists",
+        },
       ],
       [
         `./folder-non-exists/non-existent-subfile2`,
