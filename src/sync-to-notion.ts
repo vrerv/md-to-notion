@@ -286,72 +286,7 @@ export async function syncToNotion(
     }
   }
 
-  const pages = [] as Array<{ pageId: string; file: MarkdownFileData }>
-  const folderPageIds = new Set<string>()
-  await syncFolderAndTrackParents(dir, pageId, ".", false, pages)
-
-  // Track which pages from Notion were found in the local directory
-  // Include both file pages and their parent folder pages
-  const processedNotionPageIds = new Set<string>([
-    ...pages.map(page => page.pageId),
-    ...folderPageIds,
-  ])
-
-  const linkUrlMap = new Map<string, string>(
-    Array.from(linkMap.entries()).map(([key, value]) => [key, value.link])
-  )
-
-  for (const page of pages) {
-    const blocks = page.file.getContent(linkUrlMap)
-    logger(LogLevel.INFO, "Update blocks", {
-      pageId: page.pageId,
-      file: page.file,
-      newBlockSize: blocks.length,
-    })
-    await updateBlocks(page.pageId, blocks)
-  }
-
-  if (deleteNonExistentFiles) {
-    // Track pages that we've archived in this run
-    const archivedPages = new Set<string>()
-
-    // Sort keys by path length so that we delete deeper paths first
-    const sortedEntries = Array.from(linkMap.entries()).sort(
-      (a, b) => b[0].length - a[0].length
-    )
-
-    for (const [key, pageLink] of sortedEntries) {
-      const isRootPage =
-        pageLink.id.replace(/-/g, "") === pageId.replace(/-/g, "")
-      if (isRootPage) {
-        continue
-      }
-      if (processedNotionPageIds.has(pageLink.id)) {
-        continue
-      }
-      const parentPath = key.substring(0, key.lastIndexOf("/"))
-      if (parentPath && archivedPages.has(parentPath)) {
-        continue
-      }
-
-      try {
-        logger(LogLevel.INFO, `Deleting page: ${key}`)
-        await notion.pages.update({
-          page_id: pageLink.id,
-          archived: true,
-        })
-
-        archivedPages.add(key)
-      } catch (error) {
-        logger(LogLevel.ERROR, `Error deleting page: ${key}`, {
-          error,
-          pageId: pageLink.id,
-        })
-        throw error
-      }
-    }
-  }
-
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async function updateBlocks(pageId: string, newBlocks: any[]) {
     const blockIdSetToDelete = new Set<string>()
     const existingBlocks = await getExistingBlocks(notion, pageId)
@@ -394,6 +329,72 @@ export async function syncToNotion(
     for (const blockId of blockIdSetToDelete) {
       logger(LogLevel.INFO, "Deleting a block", { blockId })
       await notion.blocks.delete({ block_id: blockId })
+    }
+  }
+
+  const pages = [] as Array<{ pageId: string; file: MarkdownFileData }>
+  const folderPageIds = new Set<string>()
+  await syncFolderAndTrackParents(dir, pageId, ".", false, pages)
+
+  const linkUrlMap = new Map<string, string>(
+    Array.from(linkMap.entries()).map(([key, value]) => [key, value.link])
+  )
+
+  for (const page of pages) {
+    const blocks = page.file.getContent(linkUrlMap)
+    logger(LogLevel.INFO, "Update blocks", {
+      pageId: page.pageId,
+      file: page.file,
+      newBlockSize: blocks.length,
+    })
+    await updateBlocks(page.pageId, blocks)
+  }
+
+  // Track which pages from Notion were found in the local directory
+  // Include both file pages and their parent folder pages
+  const processedNotionPageIds = new Set<string>([
+    ...pages.map(page => page.pageId),
+    ...folderPageIds,
+  ])
+
+  if (deleteNonExistentFiles) {
+    // Track pages that we've archived in this run
+    const archivedPages = new Set<string>()
+
+    // Sort keys by path length so that we delete deeper paths first
+    const sortedEntries = Array.from(linkMap.entries()).sort(
+      (a, b) => b[0].length - a[0].length
+    )
+
+    for (const [key, pageLink] of sortedEntries) {
+      const isRootPage =
+        pageLink.id.replace(/-/g, "") === pageId.replace(/-/g, "")
+      if (isRootPage) {
+        continue
+      }
+      if (processedNotionPageIds.has(pageLink.id)) {
+        continue
+      }
+      const parentPath = key.substring(0, key.lastIndexOf("/"))
+      if (parentPath && archivedPages.has(parentPath)) {
+        continue
+      }
+
+      try {
+        logger(LogLevel.INFO, `Deleting page: ${key}`)
+        await notion.pages.update({
+          page_id: pageLink.id,
+          archived: true,
+        })
+
+        archivedPages.add(key)
+      } catch (error) {
+        logger(LogLevel.ERROR, `Error deleting page: ${key}`, {
+          error,
+          pageId: pageLink.id,
+        })
+        throw error
+      }
     }
   }
 }
