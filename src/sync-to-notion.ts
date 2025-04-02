@@ -257,12 +257,8 @@ export async function syncToNotion(
           /* do nothing */
         }
       )
-      // Track this folder page ID
-      folderPageIds.add(folderPageId)
-    } else {
-      // Also track the root page ID
-      folderPageIds.add(folderPageId)
     }
+    folderPageIds.add(folderPageId)
 
     const childParentName =
       dir.name === folder.name ? parentName : parentName + "/" + folder.name
@@ -315,7 +311,6 @@ export async function syncToNotion(
     await updateBlocks(page.pageId, blocks)
   }
 
-  // Delete pages in Notion that don't exist locally
   if (deleteNonExistentFiles) {
     // Track pages that we've archived in this run
     const archivedPages = new Set<string>()
@@ -326,44 +321,33 @@ export async function syncToNotion(
     )
 
     for (const [key, pageLink] of sortedEntries) {
-      // Skip the root page and pages that were processed
-      if (
-        pageLink.id.replace(/-/g, "") !== pageId.replace(/-/g, "") &&
-        !processedNotionPageIds.has(pageLink.id)
-      ) {
-        // Check if this page's parent has already been archived
-        const parentPath = key.substring(0, key.lastIndexOf("/"))
-        if (parentPath && archivedPages.has(parentPath)) {
-          logger(LogLevel.INFO, `Skipping page with archived parent: ${key}`, {
-            parentPath,
-            pageId: pageLink.id,
-          })
-          continue
-        }
+      const isRootPage =
+        pageLink.id.replace(/-/g, "") === pageId.replace(/-/g, "")
+      if (isRootPage) {
+        continue
+      }
+      if (processedNotionPageIds.has(pageLink.id)) {
+        continue
+      }
+      const parentPath = key.substring(0, key.lastIndexOf("/"))
+      if (parentPath && archivedPages.has(parentPath)) {
+        continue
+      }
 
-        try {
-          logger(
-            LogLevel.INFO,
-            `Deleting page that doesn't exist locally: ${key}`,
-            {
-              rootPageId: pageId,
-              pageId: pageLink.id,
-              pageUrl: pageLink.link,
-            }
-          )
-          await notion.pages.update({
-            page_id: pageLink.id,
-            archived: true,
-          })
+      try {
+        logger(LogLevel.INFO, `Deleting page: ${key}`)
+        await notion.pages.update({
+          page_id: pageLink.id,
+          archived: true,
+        })
 
-          // Add this path to our archived pages set
-          archivedPages.add(key)
-        } catch (error) {
-          logger(LogLevel.ERROR, `Error deleting page: ${key}`, {
-            error,
-            pageId: pageLink.id,
-          })
-        }
+        archivedPages.add(key)
+      } catch (error) {
+        logger(LogLevel.ERROR, `Error deleting page: ${key}`, {
+          error,
+          pageId: pageLink.id,
+        })
+        throw error
       }
     }
   }

@@ -427,6 +427,84 @@ describe("syncToNotion", () => {
     expect(linkMap.get(`./subfolder`)?.id).toBe("subfolder")
     expect(linkMap.get(`./subfolder/subfile`)?.id).toBe("subfile")
   })
+
+  it("archives pages that don't exist locally when deleteNonExistentFiles is true", async () => {
+    const pageId = "test-page-id"
+
+    // Track pages that get archived
+    const archivedPages: string[] = []
+
+    // Mock the Notion client's update method
+    mockNotionClient.pages.update = jest
+      .fn()
+      .mockImplementation(
+        async (params: { page_id: string; archived: boolean }) => {
+          if (params.archived) {
+            archivedPages.push(params.page_id)
+          }
+          return { id: params.page_id }
+        }
+      )
+
+    // Create a linkMap with pages that don't exist locally
+    const linkMap = new Map<string, NotionPageLink>([
+      [
+        `./existing-file`,
+        { id: "existing-file-id", link: "https://notion.so/existing-file" },
+      ],
+      [
+        `./non-existent-file`,
+        {
+          id: "non-existent-file-id",
+          link: "https://notion.so/non-existent-file",
+        },
+      ],
+      [
+        `./subfolder`,
+        { id: "subfolder-id", link: "https://notion.so/subfolder" },
+      ],
+      [
+        `./subfolder/non-existent-subfile`,
+        {
+          id: "non-existent-subfile-id",
+          link: "https://notion.so/non-existent-subfile",
+        },
+      ],
+    ])
+
+    // Create a folder structure that only has some of the files in the linkMap
+    const folder: Folder = {
+      name: ".",
+      files: [
+        {
+          fileName: "existing-file",
+          getContent: _ => [],
+        },
+      ],
+      subfolders: [
+        {
+          name: "subfolder",
+          files: [],
+          subfolders: [],
+        },
+      ],
+    }
+
+    // Run syncToNotion with deleteNonExistentFiles set to true
+    await syncToNotion(mockNotionClient, pageId, folder, linkMap, true)
+
+    // Verify that non-existent files were archived
+    expect(archivedPages).toContain("non-existent-file-id")
+    expect(archivedPages).toContain("non-existent-subfile-id")
+
+    // Verify that existing files and folders were not archived
+    expect(archivedPages).not.toContain("existing-file-id")
+    expect(archivedPages).not.toContain("subfolder-id")
+    expect(archivedPages).not.toContain(pageId)
+
+    // Verify update was called the right number of times
+    expect(mockNotionClient.pages.update).toHaveBeenCalledTimes(2)
+  })
 })
 
 describe("collectCurrentFiles", () => {
