@@ -45,7 +45,7 @@ You can see the [md-to-notion Notion Page](https://vrerv.notion.site/MD-To-Notio
 
 This package supports the following minimum versions:
 
-- Runtime: `node >= 15`
+- Runtime: `node >= 16`
 - Type definitions (optional): `typescript >= 4.5`
 
 Earlier versions may still work, but we encourage people building new applications to upgrade to the current stable.
