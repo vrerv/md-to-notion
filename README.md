@@ -24,7 +24,7 @@
 You need to get Notion API secret and page ID to upload your markdown files.
 Follow this [guide](./docs/configure-notion.md) to get the secret and page ID.
 
-See [Example Project](./examples/example-project) for live example
+See [Example Project](./examples/example-project) for live example.
 
 ### CLI
 
@@ -38,7 +38,7 @@ Update all markdown files under the current directory to Notion page
 npx @vrerv/md-to-notion -t <notion-api-secret> -p <notion-page-id> .
 ```
 
-This project markdown files are also published as Notion pages by this package.
+This project markdown files are also published as Notion pages by this package using [GitHub Actions](./docs/github-actions.md).
 You can see the [md-to-notion Notion Page](https://vrerv.notion.site/MD-To-Notion-e85be6990664452b8669c72d989ce258)
 
 ## Requirements
