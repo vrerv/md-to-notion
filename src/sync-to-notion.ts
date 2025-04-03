@@ -409,10 +409,7 @@ export async function syncToNotion(
 
       try {
         logger(LogLevel.INFO, `Deleting page: ${key}`)
-        await notion.pages.update({
-          page_id: pageLink.id,
-          archived: true,
-        })
+        await archivePage(notion, pageLink.id)
 
         archivedPages.add(key)
       } catch (error) {
@@ -424,4 +421,24 @@ export async function syncToNotion(
       }
     }
   }
+}
+
+export async function archiveChildPages(notion: Client, pageId: string) {
+  logger(LogLevel.INFO, `Archiving child pages of: ${pageId}`)
+  const childrenResponse = await notion.blocks.children.list({
+    block_id: pageId,
+  })
+
+  for (const child of childrenResponse.results) {
+    if (isBlockObjectResponse(child) && child.type === "child_page") {
+      await archivePage(notion, child.id)
+    }
+  }
+}
+
+export async function archivePage(notion: Client, pageId: string) {
+  await notion.pages.update({
+    page_id: pageId,
+    archived: true,
+  })
 }
