@@ -4,7 +4,7 @@ import { printFolderHierarchy, readMarkdownFiles, syncToNotion } from "./index"
 import { Command } from "commander"
 import { description, version } from "../package.json"
 import { Client } from "@notionhq/client"
-import { collectCurrentFiles } from "./sync-to-notion"
+import { collectCurrentFiles, archiveChildPages } from "./sync-to-notion"
 
 const REPL_TEXT = "${text}"
 const REPL_LINK_PATH_FROM_ROOT = "${linkPathFromRoot}"
@@ -24,6 +24,7 @@ async function main(
     linkReplacer: string
     useGithubLinkReplacer: string
     delete: boolean
+    renew: boolean
   }
 ) {
   let replacer
@@ -57,6 +58,9 @@ async function main(
 
   if (dir) {
     const notion = new Client({ auth: options.token })
+    if (options.renew) {
+      await archiveChildPages(notion, options.pageId)
+    }
     const linkMap = await collectCurrentFiles(notion, options.pageId)
     await syncToNotion(notion, options.pageId, dir, linkMap, options.delete)
   }
@@ -103,6 +107,7 @@ program
     "Delete pages in Notion that don't exist locally",
     false
   )
+  .option("-n, --renew", "Delete all pages in Notion before sync", false)
   .action(main)
 
 program.parse(process.argv)
