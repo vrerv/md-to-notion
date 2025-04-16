@@ -157,6 +157,10 @@ export async function syncToNotion(
             children[index] = block.bulleted_list_item?.children
             delete block.bulleted_list_item?.children
           }
+          if (limitChild && block.numbered_list_item?.children) {
+            children[index] = block.numbered_list_item?.children
+            delete block.numbered_list_item?.children
+          }
           return block
         })
       try {
