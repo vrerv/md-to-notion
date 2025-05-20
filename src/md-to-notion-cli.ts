@@ -25,6 +25,7 @@ async function main(
     useGithubLinkReplacer: string
     delete: boolean
     renew: boolean
+    timeout: number
   }
 ) {
   let replacer
@@ -57,7 +58,8 @@ async function main(
   }
 
   if (dir) {
-    const notion = new Client({ auth: options.token })
+    const timeoutMs = parseInt(String(options.timeout), 10)
+    const notion = new Client({ auth: options.token, timeoutMs })
     if (options.renew) {
       await archiveChildPages(notion, options.pageId)
     }
@@ -108,6 +110,12 @@ program
     false
   )
   .option("-n, --renew", "Delete all pages in Notion before sync", false)
+  .option("--timeout <number>", "Timeout for API calls in milliseconds", "10000")
   .action(main)
 
-program.parse(process.argv)
+// Export for testing purposes
+export { program, main }
+
+if (require.main === module) {
+  program.parse(process.argv)
+}
