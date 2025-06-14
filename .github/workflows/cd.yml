@@ -19,7 +19,7 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-version }}
-      - run: npm install
+      - run: npm ci
       - run: npm run build
       - run: npm link
       - run: md-to-notion -t ${{ secrets.NOTION_API_TOKEN }} -p ${{ secrets.MD_TO_NOTION_PAGE_ID }} -g vrerv/md-to-notion/blob/main -v .
