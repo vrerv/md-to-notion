@@ -23,7 +23,12 @@ describe("readMarkdownFiles", () => {
   }
 
   function mockFile(baseName: string, fileName: string, content: string) {
-    mockedFs.readdirSync.mockReturnValue([
+    // Explicitly type readdirSync as one of the overloaded types
+    const mockedReaddirSync =
+      mockedFs.readdirSync as unknown as jest.MockedFunction<
+        (path: string, options?: { withFileTypes: true }) => fs.Dirent[]
+      >
+    mockedReaddirSync.mockReturnValue([
       {
         name: fileName,
         isDirectory: () => false,
