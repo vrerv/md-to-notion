@@ -2,9 +2,6 @@
   "name": "@vrerv/md-to-notion",
   "version": "1.1.0",
   "description": "An upload of markdown files to a hierarchy of Notion pages.",
-  "engines": {
-    "node": ">=15"
-  },
   "homepage": "https://vrerv.com",
   "bugs": {
     "url": "https://github.com/vrerv/md-to-notion/issues"
