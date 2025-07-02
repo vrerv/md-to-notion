@@ -153,13 +153,9 @@ export async function syncToNotion(
       const chunk = blocks
         .slice(i, i + NOTION_BLOCK_LIMIT)
         .map((block, index) => {
-          if (limitChild && block.bulleted_list_item?.children) {
-            children[index] = block.bulleted_list_item?.children
-            delete block.bulleted_list_item?.children
-          }
-          if (limitChild && block.numbered_list_item?.children) {
-            children[index] = block.numbered_list_item?.children
-            delete block.numbered_list_item?.children
+          if (limitChild && block[block.type]?.children) {
+            children[index] = block[block.type]?.children
+            delete block[block.type]?.children
           }
           return block
         })
