@@ -379,6 +379,145 @@ describe("syncToNotion", () => {
     expect(linkMap.get(`./test-file`)?.id).toBe("test-file")
   })
 
+  it("creates a new page with deeply nested numbered list", async () => {
+    const pageId = "test-page-id"
+    const linkMap = new Map<string, NotionPageLink>()
+    const folder: Folder = {
+      name: "root",
+      files: [
+        {
+          fileName: "test-file",
+          getContent: _ => [
+            {
+              numbered_list_item: {
+                children: [
+                  {
+                    bulleted_list_item: {
+                      children: [
+                        {
+                          numbered_list_item: {
+                            children: [
+                              {
+                                bulleted_list_item: {
+                                  children: [
+                                    {
+                                      numbered_list_item: {
+                                        rich_text: [
+                                          {
+                                            annotations: {
+                                              bold: false,
+                                              code: false,
+                                              color: "default",
+                                              italic: false,
+                                              strikethrough: false,
+                                              underline: false,
+                                            },
+                                            text: {
+                                              content: "depth5",
+                                            },
+                                            type: "text",
+                                          },
+                                        ],
+                                      },
+                                      object: "block",
+                                      type: "numbered_list_item",
+                                    },
+                                  ],
+                                  rich_text: [
+                                    {
+                                      annotations: {
+                                        bold: false,
+                                        code: false,
+                                        color: "default",
+                                        italic: false,
+                                        strikethrough: false,
+                                        underline: false,
+                                      },
+                                      text: {
+                                        content: "depth4",
+                                      },
+                                      type: "text",
+                                    },
+                                  ],
+                                },
+                                object: "block",
+                                type: "bullet_list_item",
+                              },
+                            ],
+                            rich_text: [
+                              {
+                                annotations: {
+                                  bold: false,
+                                  code: false,
+                                  color: "default",
+                                  italic: false,
+                                  strikethrough: false,
+                                  underline: false,
+                                },
+                                text: {
+                                  content: "depth3",
+                                },
+                                type: "text",
+                              },
+                            ],
+                          },
+                          object: "block",
+                          type: "numbered_list_item",
+                        },
+                      ],
+                      rich_text: [
+                        {
+                          annotations: {
+                            bold: false,
+                            code: false,
+                            color: "default",
+                            italic: false,
+                            strikethrough: false,
+                            underline: false,
+                          },
+                          text: {
+                            content: "depth2",
+                          },
+                          type: "text",
+                        },
+                      ],
+                    },
+                    object: "block",
+                    type: "bulleted_list_item",
+                  },
+                ],
+                rich_text: [
+                  {
+                    annotations: {
+                      bold: false,
+                      code: false,
+                      color: "default",
+                      italic: false,
+                      strikethrough: false,
+                      underline: false,
+                    },
+                    text: {
+                      content: "depth1",
+                    },
+                    type: "text",
+                  },
+                ],
+              },
+              object: "block",
+              type: "numbered_list_item",
+            },
+          ],
+        },
+      ],
+      subfolders: [],
+    }
+
+    await syncToNotion(mockNotionClient, pageId, folder, linkMap)
+
+    expect(linkMap.size).toBe(1)
+    expect(linkMap.get(`./test-file`)?.id).toBe("test-file")
+  })
+
   it("updates an existing page for a markdown file", async () => {
     const pageId = "test-page-id"
     const linkMap = new Map<string, NotionPageLink>([
