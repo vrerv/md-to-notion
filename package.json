@@ -1,6 +1,6 @@
 {
   "name": "@vrerv/md-to-notion",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "An upload of markdown files to a hierarchy of Notion pages.",
   "homepage": "https://vrerv.com",
   "bugs": {
